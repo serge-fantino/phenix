@@ -1,5 +1,6 @@
 package org.kmsf.phenix.logical;
 
+import org.kmsf.phenix.database.Column;
 import org.kmsf.phenix.database.Join;
 import org.kmsf.phenix.database.Selector;
 import org.kmsf.phenix.database.sql.PrintResult;
@@ -28,6 +29,15 @@ public class Attribute extends Selector {
 
     public Optional<String> getName() {
         return Optional.ofNullable(name);
+    }
+
+    @Override
+    public Optional<String> getDefaultAlias() {
+        if (definition instanceof Selector) {
+            return ((Selector)definition).getDefaultAlias();
+        } else {
+            return Optional.empty();
+        }
     }
 
     /**

@@ -16,6 +16,11 @@ public class Column extends Selector {
         this.name = name;
     }
 
+    @Override
+    public Optional<String> getDefaultAlias() {
+        return Optional.ofNullable(name);
+    }
+
     public Optional<String> getName() {
         return Optional.ofNullable(name);
     }
@@ -35,4 +40,5 @@ public class Column extends Selector {
     public FunctionType getSource() {
         return new FunctionType(table);
     }
+
 }
