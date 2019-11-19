@@ -1,5 +1,6 @@
 package org.kmsf.phenix.logical;
 
+import org.junit.jupiter.api.Test;
 import org.kmsf.phenix.database.Join;
 import org.kmsf.phenix.database.ScopeException;
 import org.kmsf.phenix.database.Select;
@@ -16,8 +17,8 @@ class QueryTest {
     public void select() throws ScopeException {
         Table tPeople = new Table("people");
         Entity people = new Entity("people", tPeople);
-        Attribute peopleName = people.attribute("name",tPeople.column("name"));
-        assertEquals("SELECT p.'name' FROM 'people' p",
+        Attribute peopleName = people.attribute("peopleName",tPeople.column("name"));
+        assertEquals("SELECT p.'name' AS peopleName FROM 'people' p",
                 new Query()
                         .select(peopleName).print());
         assertEquals("SELECT p.'name', p.'title' FROM 'people' p",

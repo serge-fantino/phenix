@@ -1,5 +1,6 @@
 package org.kmsf.phenix.database.sql;
 
+import org.kmsf.phenix.database.Select;
 import org.kmsf.phenix.function.Function;
 import org.kmsf.phenix.database.View;
 
@@ -13,8 +14,8 @@ public class JoinClause extends FromClause {
     }
 
     public PrintResult print(PrintResult result) {
-        result.append("INNER JOIN ");
-        super.print(result).append(" ON ");
+        result.append(Select.INNERJOIN).space();
+        super.print(result).space().append(Select.ON).space();
         join.print(getScope(), result);
         return result;
     }

@@ -15,11 +15,12 @@ import java.util.stream.Collectors;
  */
 public class Select extends Statement {
 
-    private static final String SELECT = "SELECT";
-    private static final String FROM = "FROM";
-    private static final String GROUPBY = "GROUP BY";
-
-    private static final String DELIMITER = ",";
+    public static final String SELECT = "SELECT";
+    public static final String FROM = "FROM";
+    public static final String INNERJOIN = "INNER JOIN";
+    public static final String ON = "ON";
+    public static final String GROUPBY = "GROUP BY";
+    public static final String AS = "AS";
 
     private ArrayList<FromClause> from = new ArrayList<>();
     private ArrayList<SelectClause> selectors = new ArrayList<>();
@@ -132,10 +133,10 @@ public class Select extends Statement {
     public PrintResult print(Scope scope, PrintResult result) {
         result.append(SELECT);
         printClauseList(result, selectors);
-        result.append(" ").append(FROM);
+        result.space().append(FROM);
         printFromClause(result);
         if (!groupBy.isEmpty()) {
-            result.append(" ").append(GROUPBY);
+            result.space().append(GROUPBY);
             printClauseList(result, groupBy);
         }
         return result;
@@ -146,17 +147,17 @@ public class Select extends Statement {
         for (int i=0; i<from.size(); i++) {
             FromClause clause = from.get(i);
             if (i>0 && !(clause instanceof JoinClause))
-                result.append(" ,");
+                result.space().comma();
             else
-                result.append(" ");
+                result.space();
             clause.print(result);
         }
     }
 
     private void printClauseList(PrintResult result, List<? extends Printer> clauses) {
         for (int i=0; i<clauses.size(); i++) {
-            if (i>0) result.append(",");
-            result.append(" ");
+            if (i>0) result.comma();
+            result.space();
             clauses.get(i).print(result);
         }
     }

@@ -27,7 +27,7 @@ public class FromClause implements Printer {
         if (view.getPrecedence()< Function.PRECEDENCE_ORDER_VIEW) result.append("(");
         view.print(scope, result);
         if (view.getPrecedence()< Function.PRECEDENCE_ORDER_VIEW) result.append(")");
-        result.append(" ").append(alias);
+        result.space().append(alias);
         return result;
     }
 }

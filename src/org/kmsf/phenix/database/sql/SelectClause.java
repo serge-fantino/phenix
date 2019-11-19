@@ -1,5 +1,6 @@
 package org.kmsf.phenix.database.sql;
 
+import org.kmsf.phenix.database.Select;
 import org.kmsf.phenix.function.Function;
 
 import java.util.Optional;
@@ -24,7 +25,7 @@ public class SelectClause implements Printer {
         expr.print(scope, result);
         if (alias.isPresent()) {
             if (!expr.getName().equals(alias))
-                result.append(" ").append(alias.get());
+                result.space().append(Select.AS).space().append(alias.get());
         }
         return result;
     }

@@ -30,6 +30,16 @@ public class Attribute extends Selector {
         return Optional.ofNullable(name);
     }
 
+    /**
+     * allow to rename an attribute, for instance when created from a column name
+     * @param name
+     * @return
+     */
+    public Attribute alias(String name) {
+        this.name = name;
+        return this;
+    }
+
     @Override
     public PrintResult print(Scope scope, PrintResult result) {
         if (definition instanceof Join) {

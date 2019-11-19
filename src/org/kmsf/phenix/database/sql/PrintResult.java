@@ -14,6 +14,16 @@ public class PrintResult {
     public PrintResult() {
     }
 
+    public PrintResult space() {
+        buffer.append(" ");
+        return this;
+    }
+
+    public PrintResult comma() {
+        buffer.append(",");
+        return this;
+    }
+
     public PrintResult append(String data) {
         buffer.append(data);
         return this;

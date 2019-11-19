@@ -11,6 +11,12 @@ public class Query extends Statement {
 
     private Select select = new Select();
 
+    public Query() {}
+
+    public Query(Entity root) {
+        this.select(root);
+    }
+
     public Query select(Attribute attr) {
         addToScopeIfNeeded(attr);
         select.select(attr, attr.getName().get());
@@ -20,16 +26,6 @@ public class Query extends Statement {
     public Query select(Entity entity) {
         addToScopeIfNeeded(entity);
         select.select(Functions.STAR(entity));
-        return this;
-    }
-
-    public Query from(Entity entity) {
-        select.from(entity);
-        return this;
-    }
-
-    public Query from(View view) {
-        select.from(view);
         return this;
     }
 
@@ -43,6 +39,21 @@ public class Query extends Statement {
                     }
                 }
         );
+    }
+
+    public Query from(Entity entity) {
+        select.from(entity);
+        return this;
+    }
+
+    public Query from(View view) {
+        select.from(view);
+        return this;
+    }
+
+    public Query groupBy(Attribute attr) {
+        select.groupBy(attr);
+        return this;
     }
 
     @Override

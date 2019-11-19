@@ -28,12 +28,12 @@ class SelectTest {
         assertEquals("SELECT c.'name', a.'balance' FROM 'customer' c INNER JOIN 'account' a ON c.'ID'=a.'CUST_ID'", new Select().from(customer).select(customer.column("name")).innerJoin(account, Functions.EQUALS(customer.column("ID"), account.column("CUST_ID"))).select(account.column("balance")).print());
         Table people = new Table("people");
         Table department = new Table("department");
-        assertEquals("SELECT p.'name' manager, d.'name' deptName, p1.'name' staff_name FROM 'people' p INNER JOIN 'department' d ON p.'ID'=d.'manager_ID' INNER JOIN 'people' p1 ON p1.'department_ID'=d.'ID'",
+        assertEquals("SELECT p.'name' AS manager, d.'name' AS deptName, p1.'name' AS staff_name FROM 'people' p INNER JOIN 'department' d ON p.'ID'=d.'manager_ID' INNER JOIN 'people' p1 ON p1.'department_ID'=d.'ID'",
                 new Select().from(people).select(people.column("name"),"manager")
                         .innerJoin(department, Functions.EQUALS(people.column("ID"), department.column("manager_ID"))).select(department.column("name"), "deptName")
                         .innerJoin(people, Functions.EQUALS(people.column("department_ID"),department.column("ID"))).select(people.column("name"), "staff_name")
                         .print());
-        assertEquals("SELECT p.'name', d.'name' deptName, p1.'name' name1 FROM 'people' p INNER JOIN 'department' d ON p.'ID'=d.'manager_ID' INNER JOIN 'people' p1 ON p1.'department_ID'=d.'ID'",
+        assertEquals("SELECT p.'name', d.'name' AS deptName, p1.'name' AS name1 FROM 'people' p INNER JOIN 'department' d ON p.'ID'=d.'manager_ID' INNER JOIN 'people' p1 ON p1.'department_ID'=d.'ID'",
                 new Select().from(people).select(people.column("name"))
                         .innerJoin(department, Functions.EQUALS(people.column("ID"), department.column("manager_ID"))).select(department.column("name"), "deptName")
                         .innerJoin(people, Functions.EQUALS(people.column("department_ID"),department.column("ID"))).select(people.column("name"))
