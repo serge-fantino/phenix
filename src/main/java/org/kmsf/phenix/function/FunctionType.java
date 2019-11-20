@@ -44,6 +44,16 @@ public class FunctionType {
         return Collections.unmodifiableList(values);
     }
 
+    public Optional<Function> getHead() {
+        if (values.isEmpty()) return Optional.empty();
+        return Optional.ofNullable(values.get(0));
+    }
+
+    public Optional<Function> getTail() {
+        if (values.isEmpty()) return Optional.empty();
+        return Optional.ofNullable(values.get(values.size() - 1));
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj == this) return true;

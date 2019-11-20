@@ -53,7 +53,6 @@ public class Query extends Statement {
     }
 
     public Query groupBy(Attribute attr) {
-        addToScopeIfNeeded(attr);
         select(attr);
         select.groupBy(attr);
         return this;

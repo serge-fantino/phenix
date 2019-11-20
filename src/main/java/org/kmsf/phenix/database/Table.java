@@ -50,6 +50,10 @@ public class Table extends View {
             View v = (View) obj;
             return v.getSource().equals(this);
         }
+        if (obj instanceof Join) {
+            View target = ((Join) obj).getTarget();
+            if (target.equals(this)) return true;
+        }
         return false;
     }
 

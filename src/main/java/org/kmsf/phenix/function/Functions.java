@@ -46,4 +46,5 @@ public class Functions {
     public static Function SUM(Function a) {
         return new UnaryFunction(_SUM, a);
     }
+
 }

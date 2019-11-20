@@ -1,5 +1,6 @@
 package org.kmsf.phenix.logical;
 
+import org.kmsf.phenix.database.Join;
 import org.kmsf.phenix.database.Selector;
 import org.kmsf.phenix.database.Table;
 import org.kmsf.phenix.database.View;
@@ -58,6 +59,10 @@ public class Entity extends View {
         if (obj instanceof View) {
             View view = (View) obj;
             if (view.equals(this.view)) return true;
+        }
+        if (obj instanceof Join) {
+            View target = ((Join) obj).getTarget();
+            if (target.equals(this.view)) return true;
         }
         return false;
     }

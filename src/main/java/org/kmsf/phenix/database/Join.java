@@ -36,4 +36,23 @@ public class Join extends Function {
     public View getTarget() {
         return target;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) return true;
+        if (obj instanceof View) {
+            return obj.equals(target);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return target.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "INNER JOIN " + target + " ON " + definition;
+    }
 }
