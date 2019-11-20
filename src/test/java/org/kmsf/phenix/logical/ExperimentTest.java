@@ -17,7 +17,7 @@ public class ExperimentTest {
         Table tTransaction = new Table("transaction");
         Entity transaction = new Entity("transaction", tTransaction);
         Attribute totalAmount = transaction.attribute("totalAmount", Functions.SUM(tTransaction.column("amount")));
-        assertEquals("SELECT sum(t.'amount') as 'totalAmount', c.'name' as 'customerName' FROM 'transaction' t INNER JOIN 'customer' c ON c.'ID'=t.'CUST_ID_FK' group by c.'name'",
+        assertEquals("SELECT sum(t.'amount') AS 'totalAmount', c.'name' AS 'customerName' FROM 'transaction' t INNER JOIN 'customer' c ON c.'ID'=t.'CUST_ID_FK' GROUP BY c.'name'",
                 new Query(transaction).select(totalAmount).groupBy(customerName).print());
     }
 }
