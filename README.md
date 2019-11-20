@@ -1,5 +1,5 @@
 # phenix
-[![Build Status](https://github.com/serge-fantino/phenix/workflows/Java%20CI/badge.svg)]()
+[![Build Status](https://github.com/serge-fantino/phenix/workflows/Java%20CI/badge.svg)](https://github.com/serge-fantino/phenix/actions?query=workflow%3A%22Java+CI%22)
 
 As the name implies, Phenix is a revival of a fairly old project I started in 2004.
 
