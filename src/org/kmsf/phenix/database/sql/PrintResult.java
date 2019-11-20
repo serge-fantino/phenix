@@ -24,6 +24,11 @@ public class PrintResult {
         return this;
     }
 
+    public PrintResult dot() {
+        buffer.append(".");
+        return this;
+    }
+
     public PrintResult append(String data) {
         buffer.append(data);
         return this;

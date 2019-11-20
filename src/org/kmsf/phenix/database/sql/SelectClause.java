@@ -4,6 +4,7 @@ import org.kmsf.phenix.database.Column;
 import org.kmsf.phenix.database.Select;
 import org.kmsf.phenix.database.Selector;
 import org.kmsf.phenix.function.Function;
+import org.kmsf.phenix.function.Functions;
 
 import java.util.Optional;
 
@@ -28,7 +29,8 @@ public class SelectClause implements Printer {
         if (alias.isPresent()) {
             if (expr instanceof Selector) {
                 Selector selector = (Selector)expr;
-                if (!selector.getDefaultAlias().equals(alias)) {
+                Optional<String> defaultAlias = selector.getDefaultAlias();
+                if (!defaultAlias.equals(alias) && alias.isPresent() && !(defaultAlias.isPresent() && defaultAlias.get().equals(Functions._STAR))) {
                     appendAlias(result, alias.get());
                 }
             } else

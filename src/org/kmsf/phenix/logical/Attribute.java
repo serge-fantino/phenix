@@ -33,11 +33,12 @@ public class Attribute extends Selector {
 
     @Override
     public Optional<String> getDefaultAlias() {
-        if (definition instanceof Selector) {
+        if (definition instanceof Join)
+            return Optional.of(Functions._STAR);
+        if (definition instanceof Selector)
             return ((Selector)definition).getDefaultAlias();
-        } else {
-            return Optional.empty();
-        }
+        // else
+        return Optional.empty();
     }
 
     /**

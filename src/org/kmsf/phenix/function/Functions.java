@@ -10,6 +10,7 @@ public class Functions {
 
     public static final String _EQUALS = "equals";
     public static final String _SUM = "SUM";
+    public static final String _STAR = "*";
 
     public static Function EQUALS(Function a, Function b) {
         return new BinaryFunction(_EQUALS, a, b) {
@@ -27,10 +28,10 @@ public class Functions {
             public PrintResult print(Scope scope, PrintResult result) {
                 try {
                     String alias = scope.get(v).getAlias();
-                    result.append(alias+".*");
+                    result.append(alias).dot().append(_STAR);
                 } catch (ScopeException e) {
                     result.error(new ScopeException(e.getMessage()+" at position "+result.size()));
-                    result.append("*");
+                    result.append(_STAR);
                 }
                 return result;
             }

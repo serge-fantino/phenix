@@ -33,9 +33,11 @@ class QueryTest {
                 people.attribute("department",
                         new Join(tDepartment, Functions.EQUALS(tPeople.column("DEP_ID_FK"), tDepartment.column("ID"))));
         assertEquals("SELECT d.* FROM 'people' p INNER JOIN 'department' d ON p.'DEP_ID_FK'=d.'ID'"
-                , new Query().select(peopleDepartment).print());
+                , new Query()
+                        .select(peopleDepartment)
+                        .print());
         Attribute depName = department.attribute("name");
-        assertEquals("SELECT p.'name', d.* FROM 'people' p INNER JOIN 'department' d ON p.'DEP_ID_FK'=d.'ID'", new Query().select(peopleName).select(peopleDepartment).print());
+        assertEquals("SELECT p.'name' AS peopleName, d.* FROM 'people' p INNER JOIN 'department' d ON p.'DEP_ID_FK'=d.'ID'", new Query().select(peopleName).select(peopleDepartment).print());
     }
 
 
