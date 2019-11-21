@@ -1,6 +1,7 @@
 package org.kmsf.phenix.database.sql;
 
 import org.kmsf.phenix.database.ScopeException;
+import org.kmsf.phenix.function.Function;
 
 import java.util.ArrayList;
 
@@ -32,6 +33,10 @@ public class PrintResult {
     public PrintResult append(String data) {
         buffer.append(data);
         return this;
+    }
+
+    public PrintResult append(Scope scope, Function expr) {
+        return expr.print(scope, this);
     }
 
     public PrintResult appendLiteral(String literal) {

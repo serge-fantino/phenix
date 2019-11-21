@@ -18,9 +18,12 @@ public class Query extends Statement {
         addToScopeIfNeeded(entity);
     }
 
-    public Query select(Attribute attr) {
-        addToScopeIfNeeded(attr);
-        select.select(attr, attr.getName().get());
+    public Query select(Function expr) {
+        addToScopeIfNeeded(expr);
+        if (expr.getName().isPresent())
+            select.select(expr, expr.getName().get());
+        else
+            select.select(expr);
         return this;
     }
 
@@ -52,9 +55,9 @@ public class Query extends Statement {
         return this;
     }
 
-    public Query groupBy(Attribute attr) {
-        select(attr);
-        select.groupBy(attr);
+    public Query groupBy(Function expr) {
+        select(expr);
+        select.groupBy(expr);
         return this;
     }
 

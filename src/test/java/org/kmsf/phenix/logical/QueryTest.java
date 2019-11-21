@@ -8,7 +8,8 @@ import org.kmsf.phenix.database.Table;
 import org.kmsf.phenix.database.sql.PrintResult;
 import org.kmsf.phenix.database.sql.Scope;
 import org.kmsf.phenix.function.FunctionType;
-import org.kmsf.phenix.function.Functions;
+
+import static org.kmsf.phenix.function.Functions.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -32,7 +33,7 @@ class QueryTest {
         Entity department = new Entity("department", tDepartment);
         Attribute peopleDepartment =
                 people.join(tDepartment, "department",
-                        Functions.EQUALS(tPeople.column("DEP_ID_FK"), tDepartment.column("ID")));
+                        EQUALS(tPeople.column("DEP_ID_FK"), tDepartment.column("ID")));
         assertEquals("SELECT d.* FROM 'people' p INNER JOIN 'department' d ON p.'DEP_ID_FK'=d.'ID'"
                 , new Query()
                         .select(peopleDepartment)
@@ -51,7 +52,7 @@ class QueryTest {
         Entity department = new Entity("department", tDepartment);
         Attribute peopleDepartment =
                 people.join(tDepartment, "department",
-                        Functions.EQUALS(tPeople.column("DEP_ID_FK"), tDepartment.column("ID")));
+                        EQUALS(tPeople.column("DEP_ID_FK"), tDepartment.column("ID")));
         Attribute depName = department.attribute("name");
         assertEquals("SELECT a.'name' FROM (SELECT d.* FROM 'department' d) a", new Query().from(new Query().select(department)).select(depName).print());
     }
@@ -70,7 +71,7 @@ class QueryTest {
         Entity department = new Entity("department", tDepartment);
         Attribute departmentPeoples =
                 department.join(tPeople, "peoples",
-                        Functions.EQUALS(tPeople.column("DEP_ID_FK"), tDepartment.column("ID")));
+                        EQUALS(tPeople.column("DEP_ID_FK"), tDepartment.column("ID")));
         assertEquals(new FunctionType(tDepartment, tPeople), departmentPeoples.apply(peopleName).getSource());
         assertEquals("SELECT p.'name' FROM (SELECT d.* FROM 'department' d) a INNER JOIN 'people' p ON p.'DEP_ID_FK'=a.'ID'",
                 new Query()

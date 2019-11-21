@@ -10,13 +10,13 @@ public class Functions {
 
     public static final String _EQUALS = "equals";
     public static final String _SUM = "SUM";
+    public static final String _COUNT = "COUNT";
     public static final String _STAR = "*";
 
     public static Function EQUALS(Function a, Function b) {
         return new BinaryFunction(_EQUALS, a, b) {
             public PrintResult print(Scope scope, PrintResult result) {
-                a.print(scope, result).append("=");
-                b.print(scope, result);
+                result.append(scope, a).append("=").append(scope, b);
                 return result;
             }
         };
@@ -45,6 +45,15 @@ public class Functions {
 
     public static Function SUM(Function a) {
         return new UnaryFunction(_SUM, a);
+    }
+
+    public static Function COUNT(Function a) {
+        return new UnaryFunction(_COUNT, a) {
+            @Override
+            public PrintResult print(Scope scope, PrintResult result) {
+                return result.append(_COUNT).append("(").append(scope, a).append(")");
+            }
+        };
     }
 
 }
