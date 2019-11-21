@@ -19,19 +19,7 @@ public class Attribute extends Selector {
     private String name;
 
     public static Attribute APPLY(Attribute from, Attribute expr) throws ScopeException {
-        // checking the source first
-        FunctionType source = from.getSource();
-        Optional<Function> tail = source.getTail();
-        FunctionType target = expr.getSource();
-        Optional<Function> head = target.getHead();
-        if (tail.isEmpty() || head.isEmpty() || !tail.equals(head))
-            throw new ScopeException("invalid APPLY arguments: " + head + " doesn't match " + tail);
-        return new Attribute(expr.entity, expr.name, expr.definition) {
-            @Override
-            public FunctionType getSource() {
-                return new FunctionType(from.getSource(), expr.getSource());
-            }
-        };
+        return from.apply(expr);
     }
 
     public Attribute(Entity entity, String name, Function definition) {
@@ -67,6 +55,22 @@ public class Attribute extends Selector {
     public Attribute alias(String name) {
         this.name = name;
         return this;
+    }
+
+    public Attribute apply(Attribute expr) throws ScopeException {
+        // checking the source first
+        FunctionType source = this.getSource();
+        Optional<Function> tail = source.getTail();
+        FunctionType target = expr.getSource();
+        Optional<Function> head = target.getHead();
+        if (tail.isEmpty() || head.isEmpty() || !tail.equals(head))
+            throw new ScopeException("invalid APPLY arguments " + head + " doesn't match " + tail);
+        return new Attribute(expr.entity, expr.name, expr.definition) {
+            @Override
+            public FunctionType getSource() {
+                return new FunctionType(source, expr.getSource());
+            }
+        };
     }
 
     @Override

@@ -38,6 +38,10 @@ public class Entity extends View {
         return new Attribute(this, name, expr);
     }
 
+    public Attribute join(View target, String name, Function expr) {
+        return new Attribute(this, name, new Join(target, expr));
+    }
+
     @Override
     public Selector selector(String name) {
         return attribute(name);

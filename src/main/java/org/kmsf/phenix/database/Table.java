@@ -6,6 +6,9 @@ import org.kmsf.phenix.function.FunctionType;
 
 import java.util.Optional;
 
+/**
+ * A Table is a View that binds to an actual database Table
+ */
 public class Table extends View {
 
     private String name;

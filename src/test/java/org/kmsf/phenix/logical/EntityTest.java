@@ -19,7 +19,7 @@ class EntityTest {
     }
 
     @Test
-    void attribute() {
+    void attributeCreation() {
         Table tPeople = new Table("people");
         Entity people = new Entity("people", tPeople);
         Attribute name = people.attribute("name");
@@ -31,6 +31,18 @@ class EntityTest {
         Attribute aDepartment =
                 people.attribute("department", join);
         assertEquals(new FunctionType(tPeople,join), aDepartment.getSource());
+    }
+
+    @Test
+    void joinCreation() {
+        Table tPeople = new Table("people");
+        Entity people = new Entity("people", tPeople);
+        //
+        Table tDepartment = new Table("department");
+        Entity department = new Entity("department", tDepartment);
+        //
+        Attribute peopleDepartment = people.join(department, "peopleDepartment", Functions.EQUALS(tPeople.column("DEP_ID_FK"), tDepartment.column("ID")));
+        assertEquals(new FunctionType(tPeople, tDepartment), peopleDepartment.getSource());
     }
 
     @Test
@@ -60,5 +72,28 @@ class EntityTest {
         Entity people = new Entity("people", tPeople);
         assertEquals(people, tPeople);
         assertEquals(tPeople, people);
+    }
+
+    @Test
+    void checkTableEntityJoinEquals() {
+        Table tCustomer = new Table("customer");
+        Entity customer = new Entity("customer", tCustomer);
+        Table tTransaction = new Table("transaction");
+        Entity transaction = new Entity("transaction", tTransaction);
+        Join join = new Join(customer, Functions.EQUALS(tCustomer.column("ID"), tTransaction.column("CUST_ID_FK")));
+        assertEquals(tCustomer, customer);
+        assertEquals(customer, tCustomer);
+        assertEquals(customer, join);
+        assertEquals(join, customer);
+        assertEquals(tCustomer, join);
+        assertEquals(join, tCustomer);
+        assertNotEquals(tCustomer, tTransaction);
+        assertNotEquals(customer, transaction);
+        assertNotEquals(customer, tTransaction);
+        assertNotEquals(tTransaction, customer);
+        assertNotEquals(transaction, join);
+        assertNotEquals(tTransaction, join);
+        assertNotEquals(join, transaction);
+        assertNotEquals(join, tTransaction);
     }
 }

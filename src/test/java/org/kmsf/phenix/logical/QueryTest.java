@@ -7,6 +7,7 @@ import org.kmsf.phenix.database.Select;
 import org.kmsf.phenix.database.Table;
 import org.kmsf.phenix.database.sql.PrintResult;
 import org.kmsf.phenix.database.sql.Scope;
+import org.kmsf.phenix.function.FunctionType;
 import org.kmsf.phenix.function.Functions;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -30,8 +31,8 @@ class QueryTest {
         Table tDepartment = new Table("department");
         Entity department = new Entity("department", tDepartment);
         Attribute peopleDepartment =
-                people.attribute("department",
-                        new Join(tDepartment, Functions.EQUALS(tPeople.column("DEP_ID_FK"), tDepartment.column("ID"))));
+                people.join(tDepartment, "department",
+                        Functions.EQUALS(tPeople.column("DEP_ID_FK"), tDepartment.column("ID")));
         assertEquals("SELECT d.* FROM 'people' p INNER JOIN 'department' d ON p.'DEP_ID_FK'=d.'ID'"
                 , new Query()
                         .select(peopleDepartment)
@@ -49,26 +50,32 @@ class QueryTest {
         Table tDepartment = new Table("department");
         Entity department = new Entity("department", tDepartment);
         Attribute peopleDepartment =
-                people.attribute("department",
-                        new Join(tDepartment, Functions.EQUALS(tPeople.column("DEP_ID_FK"), tDepartment.column("ID"))));
+                people.join(tDepartment, "department",
+                        Functions.EQUALS(tPeople.column("DEP_ID_FK"), tDepartment.column("ID")));
         Attribute depName = department.attribute("name");
         assertEquals("SELECT a.'name' FROM (SELECT d.* FROM 'department' d) a", new Query().from(new Query().select(department)).select(depName).print());
     }
 
+    /**
+     * testing how to join from a sub-select statement
+     *
+     * @throws ScopeException
+     */
     @org.junit.jupiter.api.Test
-    public void subSelect2() throws ScopeException {
+    public void subSelectWithJoin() throws ScopeException {
         Table tPeople = new Table("people");
         Entity people = new Entity("people", tPeople);
         Attribute peopleName = people.attribute("name", tPeople.column("name"));
         Table tDepartment = new Table("department");
         Entity department = new Entity("department", tDepartment);
-        Attribute peopleDepartment =
-                people.attribute("department",
-                        new Join(tDepartment, Functions.EQUALS(tPeople.column("DEP_ID_FK"), tDepartment.column("ID"))));
-        assertEquals("SELECT p.'name' FROM (SELECT d.* FROM 'department' d) a ,'people' p",
+        Attribute departmentPeoples =
+                department.join(tPeople, "peoples",
+                        Functions.EQUALS(tPeople.column("DEP_ID_FK"), tDepartment.column("ID")));
+        assertEquals(new FunctionType(tDepartment, tPeople), departmentPeoples.apply(peopleName).getSource());
+        assertEquals("SELECT p.'name' FROM (SELECT d.* FROM 'department' d) a INNER JOIN 'people' p ON p.'DEP_ID_FK'=a.'ID'",
                 new Query()
-                .from(new Query().select(department))
-                        .select(peopleName).print());
+                        .from(new Query().select(department))
+                        .select(departmentPeoples.apply(peopleName)).print());
     }
 
 }

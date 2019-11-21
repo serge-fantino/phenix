@@ -9,7 +9,10 @@ import org.kmsf.phenix.function.Functions;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ExperimentTest {
+/**
+ * this is a test case to experiment how to use groupBy and Join
+ */
+public class AnalyticQueryTest {
 
     @Test
     public void aggregatorQuery() throws ScopeException {
@@ -36,7 +39,7 @@ public class ExperimentTest {
         Join join = new Join(customer, Functions.EQUALS(tCustomer.column("ID"), tTransaction.column("CUST_ID_FK")));
         Attribute transactionCustomer = transaction.attribute("transactions", join);
         assertEquals("SELECT SUM(t.'amount') AS totalAmount, c.'name' AS customerName FROM 'transaction' t INNER JOIN 'customer' c ON c.'ID'=t.'CUST_ID_FK' GROUP BY c.'name'",
-                new Query(transaction).select(totalAmount).groupBy(Attribute.APPLY(transactionCustomer, customerName)).print());
+                new Query(transaction).select(totalAmount).groupBy(transactionCustomer.apply(customerName)).print());
     }
 
     @Test
@@ -51,29 +54,6 @@ public class ExperimentTest {
         Attribute transactionCustomer = transaction.attribute("transactions", join);
         assertThrows(ScopeException.class, () -> new Query(transaction).select(totalAmount).groupBy(Attribute.APPLY(totalAmount, customerName)).print());
         assertEquals("SELECT SUM(t.'amount') AS totalAmount, c.'name' AS customerName FROM 'transaction' t INNER JOIN 'customer' c ON c.'ID'=t.'CUST_ID_FK' GROUP BY c.'name'",
-                new Query(transaction).select(totalAmount).groupBy(Attribute.APPLY(transactionCustomer, customerName)).print());
-    }
-
-    @Test
-    void checkTableEntityJoinEquals() {
-        Table tCustomer = new Table("customer");
-        Entity customer = new Entity("customer", tCustomer);
-        Table tTransaction = new Table("transaction");
-        Entity transaction = new Entity("transaction", tTransaction);
-        Join join = new Join(customer, Functions.EQUALS(tCustomer.column("ID"), tTransaction.column("CUST_ID_FK")));
-        assertEquals(tCustomer, customer);
-        assertEquals(customer, tCustomer);
-        assertEquals(customer, join);
-        assertEquals(join, customer);
-        assertEquals(tCustomer, join);
-        assertEquals(join, tCustomer);
-        assertNotEquals(tCustomer, tTransaction);
-        assertNotEquals(customer, transaction);
-        assertNotEquals(customer, tTransaction);
-        assertNotEquals(tTransaction, customer);
-        assertNotEquals(transaction, join);
-        assertNotEquals(tTransaction, join);
-        assertNotEquals(join, transaction);
-        assertNotEquals(join, tTransaction);
+                new Query(transaction).select(totalAmount).groupBy(transactionCustomer.apply(customerName)).print());
     }
 }
