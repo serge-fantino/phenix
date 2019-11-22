@@ -21,6 +21,11 @@ public class Column extends Selector {
         return Optional.ofNullable(name);
     }
 
+    @Override
+    public View getView() {
+        return table;
+    }
+
     public Optional<String> getName() {
         return Optional.ofNullable(name);
     }
@@ -41,4 +46,8 @@ public class Column extends Selector {
         return new FunctionType(table);
     }
 
+    @Override
+    public String toString() {
+        return "[Column '" + name + "' " + table + "]";
+    }
 }

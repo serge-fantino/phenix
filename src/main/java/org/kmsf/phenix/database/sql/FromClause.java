@@ -19,7 +19,7 @@ public class FromClause implements Printer {
         return scope;
     }
 
-    public Function getValue() {
+    public View getValue() {
         return view;
     }
 

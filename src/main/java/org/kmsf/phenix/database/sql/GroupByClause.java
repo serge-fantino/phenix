@@ -14,6 +14,10 @@ public class GroupByClause implements Printer {
         this.expr = expr;
     }
 
+    public Function getValue() {
+        return expr;
+    }
+
     public PrintResult print(PrintResult result) {
         return expr.print(scope, result);
     }

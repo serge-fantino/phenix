@@ -1,9 +1,6 @@
 package org.kmsf.phenix.logical;
 
-import org.kmsf.phenix.database.Column;
-import org.kmsf.phenix.database.Join;
-import org.kmsf.phenix.database.ScopeException;
-import org.kmsf.phenix.database.Selector;
+import org.kmsf.phenix.database.*;
 import org.kmsf.phenix.database.sql.PrintResult;
 import org.kmsf.phenix.database.sql.Scope;
 import org.kmsf.phenix.function.FunctionType;
@@ -28,7 +25,7 @@ public class Attribute extends Selector {
         this.name = name;
     }
 
-    public Entity getEntity() {
+    public View getView() {
         return entity;
     }
 

@@ -20,7 +20,14 @@ class EntityTest {
     }
 
     @Test
-    void attributeCreation() {
+    void primaryKey() throws ScopeException {
+        Table tPeople = new Table("people").PK("ID");
+        Entity people = new Entity(tPeople);
+        assertEquals(tPeople.getPK(), people.getPK());
+    }
+
+    @Test
+    void attributeCreation() throws ScopeException {
         Table tPeople = new Table("people");
         Entity people = new Entity("people", tPeople);
         Attribute name = people.attribute("name");
@@ -78,6 +85,9 @@ class EntityTest {
         Entity headCount = new Entity("headCount", departmentCount);
         assertEquals("SELECT a.* FROM (SELECT COUNT(p.'ID'), d.'ID' FROM 'department' d INNER JOIN 'people' p ON p.'DEPT_ID_FK'=d.'ID' GROUP BY d.'ID') a",
                 new Query().select(headCount).print());
+        Attribute peopleDepartment = people.join(department, "peopleDepartment", EQUALS(tPeople.column("DEPT_ID_FK"), departmentPK));
+        assertEquals("SELECT COUNT(p.'ID'), d.'name' FROM 'people' p INNER JOIN 'department' d ON p.'DEPT_ID_FK'=d.'ID' GROUP BY d.'name'",
+                new Query(people).select(COUNT(people.attribute("ID"))).groupBy(peopleDepartment.apply(department.attribute("name"))).print());
     }
 
     @Test

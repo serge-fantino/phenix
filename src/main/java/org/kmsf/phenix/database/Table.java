@@ -2,9 +2,15 @@ package org.kmsf.phenix.database;
 
 import org.kmsf.phenix.database.sql.PrintResult;
 import org.kmsf.phenix.database.sql.Scope;
+import org.kmsf.phenix.function.Function;
 import org.kmsf.phenix.function.FunctionType;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A Table is a View that binds to an actual database Table
@@ -13,12 +19,46 @@ public class Table extends View {
 
     private String name;
 
+    private Optional<List<Function>> primaryKey = Optional.empty();
+
     public Table(String name) {
         this.name = name;
     }
 
     public Optional<String> getName() {
         return Optional.ofNullable(name);
+    }
+
+    // PK support
+
+    public Table PK(String primaryKey) throws ScopeException {
+        if (this.primaryKey.isPresent()) throw new ScopeException("PrimaryKey already defined");
+        this.primaryKey = Optional.ofNullable(Collections.singletonList(column(primaryKey)));
+        return this;
+    }
+
+    public Table PK(String... names) throws ScopeException {
+        if (this.primaryKey.isPresent()) throw new ScopeException("PrimaryKey already defined");
+        this.primaryKey = Optional.of(Stream.of(names).map(name -> column(name)).collect(Collectors.toList()));
+        return this;
+    }
+
+    public Table PK(Function primaryKey) throws ScopeException {
+        if (this.primaryKey.isPresent()) throw new ScopeException("PrimaryKey already defined");
+        this.primaryKey = Optional.ofNullable(Collections.singletonList(primaryKey));
+        return this;
+    }
+
+    public Table PK(List<Function> primaryKey) throws ScopeException {
+        if (this.primaryKey.isPresent()) throw new ScopeException("PrimaryKey already defined");
+        this.primaryKey = Optional.ofNullable(primaryKey);
+        return this;
+    }
+
+    public List<Function> getPK() {
+        if (primaryKey.isPresent())
+            return Collections.unmodifiableList(primaryKey.get());
+        return Collections.emptyList();
     }
 
     public Column column(String name) {
@@ -40,7 +80,7 @@ public class Table extends View {
 
     @Override
     public String toString() {
-        return "{TABLE '" + name + "'}";
+        return "[TABLE '" + name + "']";
     }
 
     @Override

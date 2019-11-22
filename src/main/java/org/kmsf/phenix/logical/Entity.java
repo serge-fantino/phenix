@@ -1,40 +1,46 @@
 package org.kmsf.phenix.logical;
 
-import org.kmsf.phenix.database.Join;
-import org.kmsf.phenix.database.Selector;
-import org.kmsf.phenix.database.Table;
-import org.kmsf.phenix.database.View;
+import org.kmsf.phenix.database.*;
 import org.kmsf.phenix.database.sql.PrintResult;
 import org.kmsf.phenix.database.sql.Scope;
 import org.kmsf.phenix.function.FunctionType;
 import org.kmsf.phenix.function.Function;
 
+import java.util.List;
 import java.util.Optional;
 
 public class Entity extends View {
 
-    private String name;
+    private Optional<String> name;
     private View view;
 
+    public Entity(View view) {
+        this.name = view.getName();
+        this.view = view;
+    }
+
     public Entity(String name, View view) {
-        this.name = name;
+        this.name = Optional.ofNullable(name);
         this.view = view;
     }
 
     public Optional<String> getName() {
-        return Optional.ofNullable(name);
+        return name;
     }
 
-    public Attribute attribute(String name, Function expr) {
+    @Override
+    public List<Function> getPK() {
+        return view.getPK();
+    }
+
+    public Attribute attribute(String name, Function expr) throws ScopeException {
         FunctionType source = expr.getSource();
-        if (!source.contains(view)) throw new RuntimeException("invalid attribute");
+        if (!source.contains(view)) throw new ScopeException("invalid attribute");
         return new Attribute(this, name, expr);
     }
 
     public Attribute attribute(String name) {
         Selector expr = view.selector(name);
-        FunctionType source = expr.getSource();
-        if (!source.contains(view)) throw new RuntimeException("invalid attribute");
         return new Attribute(this, name, expr);
     }
 

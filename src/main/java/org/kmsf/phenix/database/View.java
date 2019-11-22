@@ -2,6 +2,9 @@ package org.kmsf.phenix.database;
 
 import org.kmsf.phenix.function.Function;
 
+import java.util.List;
+import java.util.Optional;
+
 public abstract class View extends Function {
 
     /**
@@ -11,6 +14,13 @@ public abstract class View extends Function {
      * @return
      */
     public abstract Selector selector(String name);
+
+    /**
+     * return the composite PrimaryKey if defined for this view
+     *
+     * @return
+     */
+    public abstract List<Function> getPK();
 
     @Override
     public int getPrecedence() {
