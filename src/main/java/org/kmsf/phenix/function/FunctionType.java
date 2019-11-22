@@ -8,6 +8,10 @@ public class FunctionType {
 
     private ArrayList<Function> values = new ArrayList<>();
 
+    public FunctionType() {
+        //
+    }
+
     public FunctionType(Function... functions) {
         for (Function f : functions)
             values.add(f);
@@ -18,7 +22,7 @@ public class FunctionType {
             addAll(f.values);
     }
 
-    public FunctionType(List<Function> functions) {
+    public FunctionType(List<? extends Function> functions) {
         values.addAll(functions);
     }
 

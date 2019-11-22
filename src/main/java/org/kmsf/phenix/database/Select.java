@@ -4,11 +4,9 @@ import org.kmsf.phenix.database.sql.*;
 import org.kmsf.phenix.function.FunctionType;
 import org.kmsf.phenix.function.Function;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * The Select statement purpose is to generate a syntactically correct SQL SELECT statement
@@ -34,6 +32,10 @@ public class Select extends Statement {
     public Select() {
     }
 
+    public Select(View view) {
+        from(view);
+    }
+
     public Select select(Column column) {
         selectors.add(new SelectClause(scope, column, getAlias(column.getName().get())));
         return this;
@@ -52,6 +54,20 @@ public class Select extends Statement {
     @Override
     public FunctionType getSource() {
         return new FunctionType(from.stream().map(f -> f.getValue()).collect(Collectors.toList()));
+    }
+
+    @Override
+    public List<Function> getPK() {
+        if (!groupBy.isEmpty()) {
+            // return the groupBy definition as the new PK
+            return groupBy.stream()
+                    .map(clause -> clause.getValue())
+                    .collect(Collectors.toList());
+        }
+        // only using the from - return PK even if the column is not selected
+        return from.stream()
+                .flatMap(clause -> clause.getValue().getPK().stream())
+                .collect(Collectors.toList());
     }
 
     public Scope getScope() {
@@ -122,8 +138,14 @@ public class Select extends Statement {
         return this;
     }
 
-    public Select groupBy(Function expr) {
-        groupBy.add(new GroupByClause(scope, expr));
+    public Select groupBy(Function arg) {
+        groupBy.add(new GroupByClause(scope, arg));
+        return this;
+    }
+
+    public Select groupBy(List<? extends Function> args) {
+        for (Function arg : args)
+            groupBy.add(new GroupByClause(scope, arg));
         return this;
     }
 

@@ -7,6 +7,8 @@ import org.kmsf.phenix.function.Function;
 import org.kmsf.phenix.function.FunctionType;
 import org.kmsf.phenix.function.Functions;
 
+import java.util.List;
+
 public class Query extends Statement {
 
     private Select select = new Select();
@@ -16,6 +18,11 @@ public class Query extends Statement {
 
     public Query(Entity entity) {
         addToScopeIfNeeded(entity);
+    }
+
+    @Override
+    public List<Function> getPK() {
+        return select.getPK();
     }
 
     public Query select(Function expr) {
