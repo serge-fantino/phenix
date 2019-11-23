@@ -52,6 +52,7 @@ class TableTest {
 
     @Test
     void print() throws ScopeException {
-        assertEquals("'table'", new Table("table").print(new Scope(), new PrintResult()).print());
+        assertEquals("table", new Table("table").print(new Scope(), new PrintResult()).print());
+        assertEquals("\"table\"", new Table("table", true).print(new Scope(), new PrintResult()).print());
     }
 }

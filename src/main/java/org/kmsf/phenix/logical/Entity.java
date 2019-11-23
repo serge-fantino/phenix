@@ -13,10 +13,12 @@ public class Entity extends View {
 
     private Optional<String> name;
     private View view;
+    private Scope scope;
 
     public Entity(View view) {
         this.name = view.getName();
         this.view = view;
+        this.scope = new Scope(view.getScope());
     }
 
     public Entity(String name, View view) {
@@ -26,6 +28,11 @@ public class Entity extends View {
 
     public Optional<String> getName() {
         return name;
+    }
+
+    @Override
+    public Scope getScope() {
+        return scope;
     }
 
     @Override

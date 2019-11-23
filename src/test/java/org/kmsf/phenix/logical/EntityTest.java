@@ -65,7 +65,7 @@ class EntityTest {
         Column cLastName = tPeople.column("last_name");
         Select select = new Select().from(tPeople).select(cFirstName).select(cLastName);
         Entity peopleName = new Entity("peopleName", select);
-        assertEquals("SELECT a.* FROM (SELECT p.'first_name', p.'last_name' FROM 'people' p) a", new Query().select(peopleName).print());
+        assertEquals("SELECT a.* FROM (SELECT p.first_name, p.last_name FROM people p) a", new Query().select(peopleName).print());
     }
 
     /**
@@ -83,10 +83,10 @@ class EntityTest {
         Attribute peoples = department.join(tPeople, "peoples", EQUALS(tPeople.column("DEPT_ID_FK"), departmentPK));
         Query departmentCount = new Query(department).select(COUNT(peoples.apply(people.attribute("ID")))).groupBy(departmentPK);
         Entity headCount = new Entity("headCount", departmentCount);
-        assertEquals("SELECT a.* FROM (SELECT COUNT(p.'ID'), d.'ID' FROM 'department' d INNER JOIN 'people' p ON p.'DEPT_ID_FK'=d.'ID' GROUP BY d.'ID') a",
+        assertEquals("SELECT a.* FROM (SELECT COUNT(DISTINCT p.ID), d.ID FROM department d INNER JOIN people p ON p.DEPT_ID_FK=d.ID GROUP BY d.ID) a",
                 new Query().select(headCount).print());
         Attribute peopleDepartment = people.join(department, "peopleDepartment", EQUALS(tPeople.column("DEPT_ID_FK"), departmentPK));
-        assertEquals("SELECT COUNT(p.'ID'), d.'name' FROM 'people' p INNER JOIN 'department' d ON p.'DEPT_ID_FK'=d.'ID' GROUP BY d.'name'",
+        assertEquals("SELECT COUNT(DISTINCT p.ID), d.name FROM people p INNER JOIN department d ON p.DEPT_ID_FK=d.ID GROUP BY d.name",
                 new Query(people).select(COUNT(people.attribute("ID"))).groupBy(peopleDepartment.apply(department.attribute("name"))).print());
     }
 
@@ -130,5 +130,23 @@ class EntityTest {
         assertNotEquals(tTransaction, join);
         assertNotEquals(join, transaction);
         assertNotEquals(join, tTransaction);
+    }
+
+    /**
+     * test creating a segment entity, that is a entity based on a sub-selection
+     */
+    @Test
+    void createSegmentEntity() throws ScopeException {
+        Table tPeople = new Table("people").PK("ID");
+        Entity people = new Entity("people", tPeople);
+        Attribute revenue = people.attribute("revenue");
+        Attribute city = people.attribute("city");
+        Query query = new Query(people).where(GREATER(revenue, CONST(1000)));
+        assertEquals("SELECT p.* FROM people p WHERE p.revenue>1000", query.print());
+        Entity richPeople = new Entity(query);
+        assertEquals("SELECT a.city, COUNT(DISTINCT a.ID) FROM (SELECT p.* FROM people p WHERE p.revenue>1000) a",
+                new Query(richPeople).select(city).select(COUNT(people)).print());
+        // check no side-effect
+        assertEquals("SELECT p.* FROM people p WHERE p.revenue>1000", query.print());
     }
 }

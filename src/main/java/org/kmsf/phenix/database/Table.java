@@ -18,6 +18,10 @@ import java.util.stream.Stream;
 public class Table extends View {
 
     private String name;
+    private Scope scope = new Scope();
+
+    // default to false because it is killing for testing
+    private boolean quoteIdentifier = false;
 
     private Optional<List<Function>> primaryKey = Optional.empty();
 
@@ -25,8 +29,22 @@ public class Table extends View {
         this.name = name;
     }
 
+    public Table(String name, boolean quoteIdentifier) {
+        this(name);
+        this.quoteIdentifier = quoteIdentifier;
+    }
+
     public Optional<String> getName() {
         return Optional.ofNullable(name);
+    }
+
+    @Override
+    public Scope getScope() {
+        return scope;
+    }
+
+    public boolean isQuoteIdentifier() {
+        return quoteIdentifier;
     }
 
     // PK support
@@ -70,7 +88,7 @@ public class Table extends View {
     }
 
     public PrintResult print(Scope scope, PrintResult result) {
-        return result.appendLiteral(name);
+        return result.appendLiteral(name, quoteIdentifier);
     }
 
     @Override
