@@ -20,10 +20,10 @@ class QueryTest {
         Table tPeople = new Table("people");
         Entity people = new Entity("people", tPeople);
         Attribute peopleName = people.attribute("peopleName",tPeople.column("name"));
-        assertEquals("SELECT p.'name' AS peopleName FROM 'people' p",
+        assertEquals("SELECT p.name AS peopleName FROM people p",
                 new Query()
                         .select(peopleName).print());
-        assertEquals("SELECT p.'name' AS peopleName, p.'title' FROM 'people' p",
+        assertEquals("SELECT p.name AS peopleName, p.title FROM people p",
                 new Query()
                         .select(peopleName)
                         .select(people.attribute("title",tPeople.column("title")))
@@ -34,12 +34,12 @@ class QueryTest {
         Attribute peopleDepartment =
                 people.join(tDepartment, "department",
                         EQUALS(tPeople.column("DEP_ID_FK"), tDepartment.column("ID")));
-        assertEquals("SELECT d.* FROM 'people' p INNER JOIN 'department' d ON p.'DEP_ID_FK'=d.'ID'"
+        assertEquals("SELECT d.* FROM people p INNER JOIN department d ON p.DEP_ID_FK=d.ID"
                 , new Query()
                         .select(peopleDepartment)
                         .print());
         Attribute depName = department.attribute("name");
-        assertEquals("SELECT p.'name' AS peopleName, d.* FROM 'people' p INNER JOIN 'department' d ON p.'DEP_ID_FK'=d.'ID'", new Query().select(peopleName).select(peopleDepartment).print());
+        assertEquals("SELECT p.name AS peopleName, d.* FROM people p INNER JOIN department d ON p.DEP_ID_FK=d.ID", new Query().select(peopleName).select(peopleDepartment).print());
     }
 
 
@@ -54,7 +54,7 @@ class QueryTest {
                 people.join(tDepartment, "department",
                         EQUALS(tPeople.column("DEP_ID_FK"), tDepartment.column("ID")));
         Attribute depName = department.attribute("name");
-        assertEquals("SELECT a.'name' FROM (SELECT d.* FROM 'department' d) a", new Query().from(new Query().select(department)).select(depName).print());
+        assertEquals("SELECT a.name FROM (SELECT d.* FROM department d) a", new Query().from(new Query().select(department)).select(depName).print());
     }
 
     /**
@@ -73,7 +73,7 @@ class QueryTest {
                 department.join(tPeople, "peoples",
                         EQUALS(tPeople.column("DEP_ID_FK"), tDepartment.column("ID")));
         assertEquals(new FunctionType(tDepartment, tPeople), departmentPeoples.apply(peopleName).getSource());
-        assertEquals("SELECT p.'name' FROM (SELECT d.* FROM 'department' d) a INNER JOIN 'people' p ON p.'DEP_ID_FK'=a.'ID'",
+        assertEquals("SELECT p.name FROM (SELECT d.* FROM department d) a INNER JOIN people p ON p.DEP_ID_FK=a.ID",
                 new Query()
                         .from(new Query().select(department))
                         .select(departmentPeoples.apply(peopleName)).print());

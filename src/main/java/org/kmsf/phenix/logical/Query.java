@@ -21,6 +21,11 @@ public class Query extends Statement {
     }
 
     @Override
+    public Scope getScope() {
+        return select.getScope();
+    }
+
+    @Override
     public List<Function> getPK() {
         return select.getPK();
     }
@@ -59,6 +64,11 @@ public class Query extends Statement {
 
     public Query from(View view) {
         select.from(view);
+        return this;
+    }
+
+    public Query where(Function predicat) {
+        select.where(predicat);
         return this;
     }
 

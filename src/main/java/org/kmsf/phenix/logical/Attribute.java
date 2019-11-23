@@ -34,11 +34,11 @@ public class Attribute extends Selector {
     }
 
     @Override
-    public Optional<String> getDefaultAlias() {
+    public Optional<String> getSystemName() {
         if (definition instanceof Join)
             return Optional.of(Functions._STAR);
         if (definition instanceof Selector)
-            return ((Selector) definition).getDefaultAlias();
+            return ((Selector) definition).getSystemName();
         // else
         return Optional.empty();
     }

@@ -17,7 +17,7 @@ public class Column extends Selector {
     }
 
     @Override
-    public Optional<String> getDefaultAlias() {
+    public Optional<String> getSystemName() {
         return Optional.ofNullable(name);
     }
 
@@ -33,10 +33,10 @@ public class Column extends Selector {
     public PrintResult print(Scope scope, PrintResult result) {
         try {
             String alias = scope.get(table).getAlias();
-            result.append(alias).append(".").appendLiteral(name);
+            result.append(alias).append(".").appendLiteral(name, table.isQuoteIdentifier());
         } catch (ScopeException e) {
             result.error(new ScopeException(e.getMessage() + " at position " + result.size()));
-            result.appendLiteral(name);
+            result.appendLiteral(name, table.isQuoteIdentifier());
         }
         return result;
     }

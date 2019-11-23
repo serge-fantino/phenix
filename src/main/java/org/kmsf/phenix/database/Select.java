@@ -3,6 +3,7 @@ package org.kmsf.phenix.database;
 import org.kmsf.phenix.database.sql.*;
 import org.kmsf.phenix.function.FunctionType;
 import org.kmsf.phenix.function.Function;
+import org.kmsf.phenix.function.Functions;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -17,12 +18,16 @@ public class Select extends Statement {
     public static final String FROM = "FROM";
     public static final String INNERJOIN = "INNER JOIN";
     public static final String ON = "ON";
+    public static final String WHERE = "WHERE";
     public static final String GROUPBY = "GROUP BY";
+    public static final String HAVING = "HAVING";
     public static final String AS = "AS";
 
-    private ArrayList<FromClause> from = new ArrayList<>();
-    private ArrayList<SelectClause> selectors = new ArrayList<>();
-    private ArrayList<GroupByClause> groupBy = new ArrayList<>();
+    private List<FromClause> from = new ArrayList<>();
+    private List<SelectClause> selectors = new ArrayList<>();
+    private List<Function> where = new ArrayList<>();
+    private List<Function> having = new ArrayList<>();
+    private List<GroupByClause> groupBy = new ArrayList<>();
 
     private Character alias = 'a';
     private HashSet<String> aliases = new HashSet<>();
@@ -34,6 +39,25 @@ public class Select extends Statement {
 
     public Select(View view) {
         from(view);
+        select(Functions.STAR(view));
+    }
+
+    /**
+     * This is the copy constructor
+     * <p>Instead of using select as a from clause, it creates a copy of select and allows to extend it without side-effects on select
+     * <p>If you require generating a sub-select, wrap the select inside a view
+     *
+     * @param select
+     */
+    public Select(Select select) {
+        this.selectors = new ArrayList<>(select.selectors);
+        this.from = new ArrayList<>(select.from);
+        this.where = new ArrayList<>(select.where);
+        this.having = new ArrayList<>(select.having);
+        this.groupBy = new ArrayList<>(select.groupBy);
+        this.alias = select.alias;
+        this.aliases = new HashSet<>(select.aliases);
+        this.scope = new Scope(select.scope);
     }
 
     public Select select(Column column) {
@@ -70,6 +94,7 @@ public class Select extends Statement {
                 .collect(Collectors.toList());
     }
 
+    @Override
     public Scope getScope() {
         return scope;
     }
@@ -109,7 +134,7 @@ public class Select extends Statement {
     public Select from(View view) {
         String alias = getAlias(view.getName());
         addToScope(view, alias);
-        from.add(new FromClause(scope, view, alias));
+        from.add(new FromClause(view.getScope(), view, alias));
         return this;
     }
 
@@ -138,6 +163,11 @@ public class Select extends Statement {
         return this;
     }
 
+    public Select where(Function predicate) {
+        where.add(predicate);
+        return this;
+    }
+
     public Select groupBy(Function arg) {
         groupBy.add(new GroupByClause(scope, arg));
         return this;
@@ -149,20 +179,40 @@ public class Select extends Statement {
         return this;
     }
 
+    public Select having(Function predicate) {
+        having.add(predicate);
+        return this;
+    }
+
     public String print() throws ScopeException {
         return print(scope, new PrintResult()).print();
     }
 
     public PrintResult print(Scope scope, PrintResult result) {
         result.append(SELECT);
-        printClauseList(result, selectors);
+        printSelectorClause(result);
         result.space().append(FROM);
         printFromClause(result);
+        if (!where.isEmpty()) {
+            result.space().append(WHERE).space().append(scope, Functions.AND(where));
+        }
         if (!groupBy.isEmpty()) {
             result.space().append(GROUPBY);
             printClauseList(result, groupBy);
         }
+        if (!having.isEmpty()) {
+            result.space().append(HAVING).space().append(scope, Functions.AND(having));
+        }
         return result;
+    }
+
+    private void printSelectorClause(PrintResult result) {
+        if (!selectors.isEmpty()) {
+            printClauseList(result, selectors);
+        } else {
+            // no specific selector, using STAR selector
+            printClauseList(result, from.stream().map(clause -> new SelectClause(scope, Functions.STAR(clause.getValue()))).collect(Collectors.toList()));
+        }
     }
 
     private void printFromClause(PrintResult result) {

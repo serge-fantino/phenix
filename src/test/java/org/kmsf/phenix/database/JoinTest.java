@@ -20,7 +20,7 @@ class JoinTest {
         Scope scope = new Scope();
         scope.add(a, "a");
         scope.add(b, "b");
-        assertEquals("INNER JOIN 'b' ON a.'ID'=b.'A_ID_FK'", join.print(scope, new PrintResult()).toString());
+        assertEquals("INNER JOIN b ON a.ID=b.A_ID_FK", join.print(scope, new PrintResult()).toString());
     }
 
 }

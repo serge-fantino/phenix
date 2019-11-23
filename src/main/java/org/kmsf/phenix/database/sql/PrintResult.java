@@ -7,7 +7,8 @@ import java.util.ArrayList;
 
 public class PrintResult {
 
-    private String literalQuote = "'";
+    public static String identifierQuote = "\"";
+    public static String literalQuote = "'";
 
     private StringBuffer buffer = new StringBuffer();
     private ArrayList<ScopeException> errors = new ArrayList<>();
@@ -39,8 +40,27 @@ public class PrintResult {
         return expr.print(scope, this);
     }
 
-    public PrintResult appendLiteral(String literal) {
-        buffer.append(literalQuote).append(literal).append(literalQuote);
+    public PrintResult append(Scope scope, Function expr, boolean enclose) {
+        if (enclose) append("(");
+        expr.print(scope, this);
+        if (enclose) append(")");
+        return this;
+    }
+
+    public PrintResult appendLiteral(String literal, boolean quoteIdentifier) {
+        if (quoteIdentifier)
+            buffer.append(identifierQuote).append(literal).append(identifierQuote);
+        else
+            buffer.append(literal);
+        return this;
+    }
+
+    public PrintResult appendConstant(Object value) {
+        if (value instanceof String) {
+            buffer.append(literalQuote).append(value).append(literalQuote);
+        } else {
+            buffer.append(value);
+        }
         return this;
     }
 

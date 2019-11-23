@@ -13,7 +13,7 @@ public class ConstFunction<T> extends Function {
 
     @Override
     public PrintResult print(Scope scope, PrintResult result) {
-        result.append(value.toString());
+        result.appendConstant(value);
         return result;
     }
 
