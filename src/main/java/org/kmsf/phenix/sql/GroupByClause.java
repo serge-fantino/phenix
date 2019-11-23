@@ -1,8 +1,7 @@
-package org.kmsf.phenix.database.sql;
+package org.kmsf.phenix.sql;
 
+import org.kmsf.phenix.database.ScopeException;
 import org.kmsf.phenix.function.Function;
-
-import java.util.Optional;
 
 public class GroupByClause implements Printer {
 
@@ -18,7 +17,7 @@ public class GroupByClause implements Printer {
         return expr;
     }
 
-    public PrintResult print(PrintResult result) {
+    public PrintResult print(PrintResult result) throws ScopeException {
         return expr.print(scope, result);
     }
 

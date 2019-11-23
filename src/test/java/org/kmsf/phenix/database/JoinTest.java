@@ -1,8 +1,8 @@
 package org.kmsf.phenix.database;
 
 import org.junit.jupiter.api.Test;
-import org.kmsf.phenix.database.sql.PrintResult;
-import org.kmsf.phenix.database.sql.Scope;
+import org.kmsf.phenix.sql.PrintResult;
+import org.kmsf.phenix.sql.Scope;
 import org.kmsf.phenix.function.FunctionType;
 
 import static org.kmsf.phenix.function.Functions.*;
@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class JoinTest {
 
     @Test
-    public void test() {
+    public void test() throws ScopeException {
         Table a = new Table("a");
         Table b = new Table("b");
         Join join = new Join(b, EQUALS(a.column("ID"), b.column("A_ID_FK")));

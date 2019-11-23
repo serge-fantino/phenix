@@ -1,8 +1,8 @@
 package org.kmsf.phenix.logical;
 
 import org.kmsf.phenix.database.*;
-import org.kmsf.phenix.database.sql.PrintResult;
-import org.kmsf.phenix.database.sql.Scope;
+import org.kmsf.phenix.sql.PrintResult;
+import org.kmsf.phenix.sql.Scope;
 import org.kmsf.phenix.function.Function;
 import org.kmsf.phenix.function.FunctionType;
 import org.kmsf.phenix.function.Functions;
@@ -23,6 +23,11 @@ public class Query extends Statement {
     @Override
     public Scope getScope() {
         return select.getScope();
+    }
+
+    @Override
+    public List<? extends Selector> getSelectors() {
+        return select.getSelectors();
     }
 
     @Override
@@ -84,7 +89,7 @@ public class Query extends Statement {
     }
 
     @Override
-    public PrintResult print(Scope scope, PrintResult result) {
+    public PrintResult print(Scope scope, PrintResult result) throws ScopeException {
         return select.print(scope, result);
     }
 

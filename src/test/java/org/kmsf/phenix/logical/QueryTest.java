@@ -1,12 +1,7 @@
 package org.kmsf.phenix.logical;
 
-import org.junit.jupiter.api.Test;
-import org.kmsf.phenix.database.Join;
 import org.kmsf.phenix.database.ScopeException;
-import org.kmsf.phenix.database.Select;
 import org.kmsf.phenix.database.Table;
-import org.kmsf.phenix.database.sql.PrintResult;
-import org.kmsf.phenix.database.sql.Scope;
 import org.kmsf.phenix.function.FunctionType;
 
 import static org.kmsf.phenix.function.Functions.*;

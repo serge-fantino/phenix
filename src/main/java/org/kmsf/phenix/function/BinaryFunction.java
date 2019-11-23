@@ -1,7 +1,8 @@
 package org.kmsf.phenix.function;
 
-import org.kmsf.phenix.database.sql.PrintResult;
-import org.kmsf.phenix.database.sql.Scope;
+import org.kmsf.phenix.database.ScopeException;
+import org.kmsf.phenix.sql.PrintResult;
+import org.kmsf.phenix.sql.Scope;
 
 public class BinaryFunction extends Function {
 
@@ -15,7 +16,7 @@ public class BinaryFunction extends Function {
         this.b = b;
     }
 
-    public PrintResult print(Scope scope, PrintResult result) {
+    public PrintResult print(Scope scope, PrintResult result) throws ScopeException {
         result.append(name + "(");
         a.print(scope, result).append(",");
         b.print(scope, result).append(")");

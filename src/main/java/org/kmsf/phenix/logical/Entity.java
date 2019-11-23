@@ -1,11 +1,12 @@
 package org.kmsf.phenix.logical;
 
 import org.kmsf.phenix.database.*;
-import org.kmsf.phenix.database.sql.PrintResult;
-import org.kmsf.phenix.database.sql.Scope;
+import org.kmsf.phenix.sql.PrintResult;
+import org.kmsf.phenix.sql.Scope;
 import org.kmsf.phenix.function.FunctionType;
 import org.kmsf.phenix.function.Function;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,6 +37,11 @@ public class Entity extends View {
     }
 
     @Override
+    public List<? extends Selector> getSelectors() {
+        return Collections.emptyList();
+    }
+
+    @Override
     public List<Function> getPK() {
         return view.getPK();
     }
@@ -46,7 +52,7 @@ public class Entity extends View {
         return new Attribute(this, name, expr);
     }
 
-    public Attribute attribute(String name) {
+    public Attribute attribute(String name) throws ScopeException {
         Selector expr = view.selector(name);
         return new Attribute(this, name, expr);
     }
@@ -56,12 +62,12 @@ public class Entity extends View {
     }
 
     @Override
-    public Selector selector(String name) {
+    public Selector selector(String name) throws ScopeException {
         return attribute(name);
     }
 
     @Override
-    public PrintResult print(Scope scope, PrintResult result) {
+    public PrintResult print(Scope scope, PrintResult result) throws ScopeException {
         return view.print(scope, result);
     }
 
@@ -91,6 +97,6 @@ public class Entity extends View {
 
     @Override
     public String toString() {
-        return "{ENTITY: " + view.toString() + "}";
+        return "[ENTITY: " + view.toString() + "]";
     }
 }

@@ -1,8 +1,8 @@
 package org.kmsf.phenix.logical;
 
 import org.kmsf.phenix.database.*;
-import org.kmsf.phenix.database.sql.PrintResult;
-import org.kmsf.phenix.database.sql.Scope;
+import org.kmsf.phenix.sql.PrintResult;
+import org.kmsf.phenix.sql.Scope;
 import org.kmsf.phenix.function.FunctionType;
 import org.kmsf.phenix.function.Function;
 import org.kmsf.phenix.function.Functions;
@@ -71,7 +71,7 @@ public class Attribute extends Selector {
     }
 
     @Override
-    public PrintResult print(Scope scope, PrintResult result) {
+    public PrintResult print(Scope scope, PrintResult result) throws ScopeException {
         if (definition instanceof Join) {
             Join join = (Join) definition;
             return Functions.STAR(join.getTarget()).print(scope, result);

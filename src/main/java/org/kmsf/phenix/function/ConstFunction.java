@@ -1,7 +1,7 @@
 package org.kmsf.phenix.function;
 
-import org.kmsf.phenix.database.sql.PrintResult;
-import org.kmsf.phenix.database.sql.Scope;
+import org.kmsf.phenix.sql.PrintResult;
+import org.kmsf.phenix.sql.Scope;
 
 public class ConstFunction<T> extends Function {
 

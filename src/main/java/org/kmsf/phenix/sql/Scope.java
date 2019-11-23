@@ -1,4 +1,4 @@
-package org.kmsf.phenix.database.sql;
+package org.kmsf.phenix.sql;
 
 import org.kmsf.phenix.function.Function;
 import org.kmsf.phenix.database.ScopeException;
@@ -18,12 +18,8 @@ public class Scope {
         parentScope = Optional.ofNullable(parent);
     }
 
-    public void add(Function reference, Mapping mapping) {
-        scope.put(reference, mapping);
-    }
-
     public void add(Function reference, String alias) {
-        scope.put(reference, new Mapping(reference, alias));
+        scope.put(reference, new Mapping(this, reference, alias));
     }
 
     public Mapping get(Function reference) throws ScopeException {

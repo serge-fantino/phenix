@@ -1,15 +1,12 @@
 package org.kmsf.phenix.function;
 
-import org.kmsf.phenix.database.Column;
 import org.kmsf.phenix.database.ScopeException;
 import org.kmsf.phenix.database.View;
-import org.kmsf.phenix.database.sql.PrintResult;
-import org.kmsf.phenix.database.sql.Scope;
+import org.kmsf.phenix.sql.PrintResult;
+import org.kmsf.phenix.sql.Scope;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 public class Functions {
 
@@ -32,7 +29,7 @@ public class Functions {
 
     public static Function IN(Function a, Function b) {
         return new BinaryFunction(_IN, a, b) {
-            public PrintResult print(Scope scope, PrintResult result) {
+            public PrintResult print(Scope scope, PrintResult result) throws ScopeException {
                 result.append(scope, a).space().append(_IN).space().append("(").append(scope, b).append(")");
                 return result;
             }
@@ -121,7 +118,7 @@ public class Functions {
         }
         return new UnaryFunction(_COUNT, arg) {
             @Override
-            public PrintResult print(Scope scope, PrintResult result) {
+            public PrintResult print(Scope scope, PrintResult result) throws ScopeException {
                 return result.append(_COUNT).append("(").append(_DISTINCT).space().append(scope, arg).append(")");
             }
         };
@@ -129,7 +126,7 @@ public class Functions {
 
     private static Function infixOperator(String operator, int precedence, Function a, Function b) {
         return new BinaryFunction(operator, a, b) {
-            public PrintResult print(Scope scope, PrintResult result) {
+            public PrintResult print(Scope scope, PrintResult result) throws ScopeException {
                 result
                         .append(scope, a, a.getPrecedence() > precedence)
                         .append(operator)
@@ -152,7 +149,7 @@ public class Functions {
             return args.get(0);// if singleton, this is a noop
         return new Function() {
             @Override
-            public PrintResult print(Scope scope, PrintResult result) {
+            public PrintResult print(Scope scope, PrintResult result) throws ScopeException {
                 for (int i = 0; i < args.size(); i++) {
                     if (i > 0) result.space().append(operator).space();
                     result.append(scope, args.get(i));

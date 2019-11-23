@@ -1,4 +1,4 @@
-package org.kmsf.phenix.database.sql;
+package org.kmsf.phenix.sql;
 
 import org.kmsf.phenix.database.ScopeException;
 import org.kmsf.phenix.function.Function;
@@ -36,18 +36,18 @@ public class PrintResult {
         return this;
     }
 
-    public PrintResult append(Scope scope, Function expr) {
+    public PrintResult append(Scope scope, Function expr) throws ScopeException {
         return expr.print(scope, this);
     }
 
-    public PrintResult append(Scope scope, Function expr, boolean enclose) {
+    public PrintResult append(Scope scope, Function expr, boolean enclose) throws ScopeException {
         if (enclose) append("(");
         expr.print(scope, this);
         if (enclose) append(")");
         return this;
     }
 
-    public PrintResult appendLiteral(String literal, boolean quoteIdentifier) {
+    public PrintResult appendIdentifier(String literal, boolean quoteIdentifier) {
         if (quoteIdentifier)
             buffer.append(identifierQuote).append(literal).append(identifierQuote);
         else

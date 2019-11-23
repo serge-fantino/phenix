@@ -1,7 +1,8 @@
 package org.kmsf.phenix.function;
 
-import org.kmsf.phenix.database.sql.PrintResult;
-import org.kmsf.phenix.database.sql.Scope;
+import org.kmsf.phenix.database.ScopeException;
+import org.kmsf.phenix.sql.PrintResult;
+import org.kmsf.phenix.sql.Scope;
 
 public class UnaryFunction extends Function {
 
@@ -13,7 +14,7 @@ public class UnaryFunction extends Function {
         this.a = a;
     }
 
-    public PrintResult print(Scope scope, PrintResult result) {
+    public PrintResult print(Scope scope, PrintResult result) throws ScopeException {
         result.append(name + "(");
         a.print(scope, result).append(")");
         return result;

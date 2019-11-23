@@ -1,7 +1,8 @@
 package org.kmsf.phenix.function;
 
-import org.kmsf.phenix.database.sql.PrintResult;
-import org.kmsf.phenix.database.sql.Scope;
+import org.kmsf.phenix.database.ScopeException;
+import org.kmsf.phenix.sql.PrintResult;
+import org.kmsf.phenix.sql.Scope;
 
 import java.util.Optional;
 
@@ -33,7 +34,7 @@ public abstract class Function {
 
     public static final int PRECEDENCE_ORDER_VIEW = 17;
 
-    public abstract PrintResult print(Scope scope, PrintResult result);
+    public abstract PrintResult print(Scope scope, PrintResult result) throws ScopeException;
 
     public abstract FunctionType getSource();
 

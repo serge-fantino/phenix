@@ -42,7 +42,7 @@ class EntityTest {
     }
 
     @Test
-    void joinCreation() {
+    void joinCreation() throws ScopeException {
         Table tPeople = new Table("people");
         Entity people = new Entity("people", tPeople);
         //
@@ -110,7 +110,7 @@ class EntityTest {
     }
 
     @Test
-    void checkTableEntityJoinEquals() {
+    void checkTableEntityJoinEquals() throws ScopeException {
         Table tCustomer = new Table("customer");
         Entity customer = new Entity("customer", tCustomer);
         Table tTransaction = new Table("transaction");
@@ -142,11 +142,11 @@ class EntityTest {
         Attribute revenue = people.attribute("revenue");
         Attribute city = people.attribute("city");
         Query query = new Query(people).where(GREATER(revenue, CONST(1000)));
-        assertEquals("SELECT p.* FROM people p WHERE p.revenue>1000", query.print());
+        assertEquals("SELECT p.ID, p.revenue, p.city FROM people p WHERE p.revenue>1000", query.print());
         Entity richPeople = new Entity(query);
-        assertEquals("SELECT a.city, COUNT(DISTINCT a.ID) FROM (SELECT p.* FROM people p WHERE p.revenue>1000) a",
+        assertEquals("SELECT a.city, COUNT(DISTINCT a.ID) FROM (SELECT p.ID, p.revenue, p.city FROM people p WHERE p.revenue>1000) a",
                 new Query(richPeople).select(city).select(COUNT(people)).print());
         // check no side-effect
-        assertEquals("SELECT p.* FROM people p WHERE p.revenue>1000", query.print());
+        assertEquals("SELECT p.ID, p.revenue, p.city FROM people p WHERE p.revenue>1000", query.print());
     }
 }

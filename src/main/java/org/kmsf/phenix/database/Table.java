@@ -1,7 +1,7 @@
 package org.kmsf.phenix.database;
 
-import org.kmsf.phenix.database.sql.PrintResult;
-import org.kmsf.phenix.database.sql.Scope;
+import org.kmsf.phenix.sql.PrintResult;
+import org.kmsf.phenix.sql.Scope;
 import org.kmsf.phenix.function.Function;
 import org.kmsf.phenix.function.FunctionType;
 
@@ -9,8 +9,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * A Table is a View that binds to an actual database Table
@@ -20,10 +18,12 @@ public class Table extends View {
     private String name;
     private Scope scope = new Scope();
 
+    private List<Column> columns = new ArrayList<>();
+
     // default to false because it is killing for testing
     private boolean quoteIdentifier = false;
 
-    private Optional<List<Function>> primaryKey = Optional.empty();
+    private Optional<List<Selector>> primaryKey = Optional.empty();
 
     public Table(String name) {
         this.name = name;
@@ -34,6 +34,16 @@ public class Table extends View {
         this.quoteIdentifier = quoteIdentifier;
     }
 
+    public boolean isQuoteIdentifier() {
+        return quoteIdentifier;
+    }
+
+    @Override
+    public Optional<String> getSystemName() {
+        return Optional.ofNullable(name);
+    }
+
+    @Override
     public Optional<String> getName() {
         return Optional.ofNullable(name);
     }
@@ -43,8 +53,25 @@ public class Table extends View {
         return scope;
     }
 
-    public boolean isQuoteIdentifier() {
-        return quoteIdentifier;
+    protected Column register(Column column) throws ScopeException {
+        if (!column.getView().equals(this)) throw new ScopeException("cannot register a column from a different table");
+        if (columns.contains(column)) return columns.get(columns.indexOf(column));
+        columns.add(column);
+        return column;
+    }
+
+    public Column column(String name) throws ScopeException {
+        return register(new Column(this, name));
+    }
+
+    @Override
+    public Selector selector(String name) throws ScopeException {
+        return column(name);
+    }
+
+    @Override
+    public List<? extends Selector> getSelectors() {
+        return this.columns;
     }
 
     // PK support
@@ -57,19 +84,26 @@ public class Table extends View {
 
     public Table PK(String... names) throws ScopeException {
         if (this.primaryKey.isPresent()) throw new ScopeException("PrimaryKey already defined");
-        this.primaryKey = Optional.of(Stream.of(names).map(name -> column(name)).collect(Collectors.toList()));
+        List<Selector> keys = new ArrayList<>();
+        for (String name : names)
+            keys.add(column(name));
+        this.primaryKey = Optional.of(keys);
         return this;
     }
 
-    public Table PK(Function primaryKey) throws ScopeException {
+    public Table PK(Selector key) throws ScopeException {
         if (this.primaryKey.isPresent()) throw new ScopeException("PrimaryKey already defined");
-        this.primaryKey = Optional.ofNullable(Collections.singletonList(primaryKey));
+        if (!key.getView().equals(this)) throw new ScopeException("the key doesn't belong to this table");
+        this.primaryKey = Optional.ofNullable(Collections.singletonList(key));
         return this;
     }
 
-    public Table PK(List<Function> primaryKey) throws ScopeException {
+    public Table PK(List<Selector> keys) throws ScopeException {
         if (this.primaryKey.isPresent()) throw new ScopeException("PrimaryKey already defined");
-        this.primaryKey = Optional.ofNullable(primaryKey);
+        for (Selector key : keys) {
+            if (!key.getView().equals(this)) throw new ScopeException("a key doesn't belong to this table");
+        }
+        this.primaryKey = Optional.ofNullable(keys);
         return this;
     }
 
@@ -79,21 +113,13 @@ public class Table extends View {
         return Collections.emptyList();
     }
 
-    public Column column(String name) {
-        return new Column(this, name);
-    }
-
-    public Selector selector(String name) {
-        return column(name);
-    }
-
     public PrintResult print(Scope scope, PrintResult result) {
-        return result.appendLiteral(name, quoteIdentifier);
+        return result.appendIdentifier(name, quoteIdentifier);
     }
 
     @Override
     public FunctionType getSource() {
-        return null;
+        return new FunctionType();
     }
 
     @Override
@@ -103,17 +129,14 @@ public class Table extends View {
 
     @Override
     public boolean equals(Object obj) {
+        if (super.equals(obj)) return true;
         if (obj instanceof Table) {
             Table t = (Table) obj;
             return t.name.equals(this.name);
         }
-        if (obj instanceof View) {
-            View v = (View) obj;
-            return v.getSource().equals(this);
-        }
-        if (obj instanceof Join) {
-            View target = ((Join) obj).getTarget();
-            if (target.equals(this)) return true;
+        if (obj instanceof ConcreteTable) {
+            ConcreteTable t = (ConcreteTable) obj;
+            return t.equals(this);
         }
         return false;
     }

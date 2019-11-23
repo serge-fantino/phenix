@@ -1,7 +1,7 @@
 package org.kmsf.phenix.database;
 
-import org.kmsf.phenix.database.sql.PrintResult;
-import org.kmsf.phenix.database.sql.Scope;
+import org.kmsf.phenix.sql.PrintResult;
+import org.kmsf.phenix.sql.Scope;
 import org.kmsf.phenix.function.FunctionType;
 
 import java.util.Optional;
@@ -33,10 +33,10 @@ public class Column extends Selector {
     public PrintResult print(Scope scope, PrintResult result) {
         try {
             String alias = scope.get(table).getAlias();
-            result.append(alias).append(".").appendLiteral(name, table.isQuoteIdentifier());
+            result.append(alias).append(".").appendIdentifier(name, table.isQuoteIdentifier());
         } catch (ScopeException e) {
             result.error(new ScopeException(e.getMessage() + " at position " + result.size()));
-            result.appendLiteral(name, table.isQuoteIdentifier());
+            result.appendIdentifier(name, table.isQuoteIdentifier());
         }
         return result;
     }

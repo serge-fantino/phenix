@@ -12,6 +12,10 @@ public class FunctionType {
         //
     }
 
+    public FunctionType(Function function) {
+        values.add(function);
+    }
+
     public FunctionType(Function... functions) {
         for (Function f : functions)
             values.add(f);

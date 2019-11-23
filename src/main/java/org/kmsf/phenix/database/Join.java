@@ -1,7 +1,7 @@
 package org.kmsf.phenix.database;
 
-import org.kmsf.phenix.database.sql.PrintResult;
-import org.kmsf.phenix.database.sql.Scope;
+import org.kmsf.phenix.sql.PrintResult;
+import org.kmsf.phenix.sql.Scope;
 import org.kmsf.phenix.function.FunctionType;
 import org.kmsf.phenix.function.Function;
 
@@ -20,7 +20,7 @@ public class Join extends Function {
     }
 
     @Override
-    public PrintResult print(Scope scope, PrintResult result) {
+    public PrintResult print(Scope scope, PrintResult result) throws ScopeException {
         result.append("INNER JOIN ");
         target.print(scope, result);
         result.append(" ON ");
