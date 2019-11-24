@@ -14,27 +14,34 @@ public class SelectClause implements Printer {
 
     private View view;
     private Scope scope;
-    private Function expr;
+    private Function definition;
     private Optional<String> alias = Optional.empty();
 
     public SelectClause(View view, Scope scope, Function expr) {
         this.view = view;
         this.scope = scope;
-        this.expr = expr;
+        this.definition = expr;
     }
+
 
     public SelectClause(View view, Scope scope, Function expr, String alias) {
         this(view, scope, expr);
         this.alias = Optional.ofNullable(alias);
     }
 
-    //public Function getValue() { return expr; }
+    public Function getDefinition() {
+        return definition;
+    }
+
+    public Optional<String> getAlias() {
+        return alias;
+    }
 
     public PrintResult print(PrintResult result) throws ScopeException {
-        expr.print(scope, result);
+        definition.print(scope, result);
         if (alias.isPresent()) {
-            if (expr instanceof Selector) {
-                Selector selector = (Selector) expr;
+            if (definition instanceof Selector) {
+                Selector selector = (Selector) definition;
                 Optional<String> systemName = selector.getSystemName();
                 if (!systemName.equals(alias) && alias.isPresent() && !(systemName.isPresent() && systemName.get().equals(Functions._STAR))) {
                     appendAlias(result, alias.get());
@@ -60,17 +67,33 @@ public class SelectClause implements Printer {
             @Override
             public PrintResult print(Scope scope, PrintResult result) throws ScopeException {
                 String from = scope.get(view).getAlias();
-                return result.append(from).append(".").append(alias.orElse(expr.getSystemName().get()));
+                return result.append(from).append(".").append(alias.orElse(definition.getSystemName().get()));
             }
 
             @Override
             public FunctionType getSource() {
-                return expr.getSource();
+                return definition.getSource();
             }
 
             @Override
             public View getView() {
                 return view;
+            }
+
+            @Override
+            public int hashCode() {
+                return definition.hashCode();
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (super.equals(obj)) return true;
+                return definition.equals(obj);
+            }
+
+            @Override
+            public String toString() {
+                return "[Reference to '" + view.getName() + "'.'" + alias.orElse(definition.getName().orElse(definition.getSystemName().toString())) + "']";
             }
         };
     }

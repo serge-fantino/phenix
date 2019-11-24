@@ -84,7 +84,7 @@ public class Query extends Statement {
     }
 
     @Override
-    public Selector selector(String name) {
+    public Selector selector(String name) throws ScopeException {
         return select.selector(name);
     }
 

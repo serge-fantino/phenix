@@ -3,8 +3,10 @@ package org.kmsf.phenix.database;
 import org.junit.jupiter.api.Test;
 import org.kmsf.phenix.function.Function;
 import org.kmsf.phenix.function.FunctionType;
+import org.kmsf.phenix.sql.Scope;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.kmsf.phenix.function.Functions.*;
@@ -151,6 +153,22 @@ class SelectTest {
                                 MULTIPLY(CONST(3), new Select().from(people).select(SUM(revenue)))))));
         assertEquals("SELECT p.peopleID, p.city, p.revenue FROM people p WHERE p.city IN (SELECT p.city FROM people p GROUP BY p.city HAVING SUM(p.revenue)>3*(SELECT SUM(p.revenue) FROM people p))",
                 peopleInRichCity.print());
+    }
+
+    @Test
+    void testSelectors() throws ScopeException {
+        Table people = new Table("people").PK("peopleID");
+        Column city = people.column("city");
+        Column revenue = people.column("revenue");
+        Function fun = MULTIPLY(revenue, revenue);
+        Select something = new Select(people).select(fun, "squareRevenue");
+        assertDoesNotThrow(() -> something.selector("squareRevenue"));
+        assertThrows(ScopeException.class, () -> something.selector("nothingToShow"));
+        Selector squareRevenue = something.selector("squareRevenue");
+        assertEquals(fun, squareRevenue);
+        assertEquals("SELECT p.revenue*p.revenue AS squareRevenue FROM people p", something.print());
+        assertEquals(Arrays.asList(new Selector[]{squareRevenue})
+                , something.getSelectors());
     }
 
 }

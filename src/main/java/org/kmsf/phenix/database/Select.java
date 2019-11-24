@@ -102,6 +102,17 @@ public class Select extends Statement {
         return selectors.stream().map(clause -> clause.asSelector()).collect(Collectors.toList());
     }
 
+    @Override
+    public Selector selector(String definition) throws ScopeException {
+        assert definition != null;
+        // the Select.selector() return a reference to a selector already defined in the scope, using its alias name
+        for (SelectClause clause : selectors) {
+            if (definition.equals(clause.getAlias().orElse(null))) return clause.asSelector();
+            if (definition.equals(clause.getDefinition().getSystemName().orElse(null))) return clause.asSelector();
+        }
+        throw new ScopeException("cannot find selector '" + definition + "'");
+    }
+
     private String getAlias(Optional<String> name) {
         if (name.isPresent())
             return getAlias(name.get().substring(0, 1));
@@ -248,8 +259,4 @@ public class Select extends Statement {
         }
     }
 
-    @Override
-    public Selector selector(String definition) {
-        throw new RuntimeException("NYI");
-    }
 }

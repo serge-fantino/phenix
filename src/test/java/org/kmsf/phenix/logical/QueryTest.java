@@ -1,8 +1,11 @@
 package org.kmsf.phenix.logical;
 
+import org.junit.jupiter.api.Test;
 import org.kmsf.phenix.database.ScopeException;
 import org.kmsf.phenix.database.Table;
 import org.kmsf.phenix.function.FunctionType;
+
+import java.util.Collections;
 
 import static org.kmsf.phenix.function.Functions.*;
 
@@ -72,6 +75,22 @@ class QueryTest {
                 new Query()
                         .from(new Query().select(department))
                         .select(departmentPeoples.apply(peopleName)).print());
+    }
+
+    @Test
+    void selector() throws ScopeException {
+        Table tPeople = new Table("people");
+        Entity people = new Entity("people", tPeople);
+        Attribute peopleName = people.attribute("peopleName", tPeople.column("name"));
+        Query query = new Query()
+                .select(peopleName);
+        assertEquals("SELECT p.name AS peopleName FROM people p",
+                query.print());
+        assertDoesNotThrow(() -> query.selector("peopleName"));
+        assertThrows(ScopeException.class, () -> query.selector("undefined"));
+        assertEquals(peopleName, query.selector("peopleName"));
+        assertEquals(Collections.singleton(peopleName), query.getSelectors());
+        assertNotEquals(Collections.singleton(people.attribute("revenue")), query.getSelectors());
     }
 
 }

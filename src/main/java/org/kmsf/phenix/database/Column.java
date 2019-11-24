@@ -48,6 +48,6 @@ public class Column extends Selector {
 
     @Override
     public String toString() {
-        return "[Column '" + name + "' " + table + "]";
+        return "[Column '" + table.getName() + "'.'" + name + "']";
     }
 }

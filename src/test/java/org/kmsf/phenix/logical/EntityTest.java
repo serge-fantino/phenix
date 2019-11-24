@@ -6,6 +6,8 @@ import org.kmsf.phenix.function.ConstFunction;
 import org.kmsf.phenix.function.Function;
 import org.kmsf.phenix.function.FunctionType;
 
+import java.util.Arrays;
+
 import static org.kmsf.phenix.function.Functions.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -148,5 +150,16 @@ class EntityTest {
                 new Query(richPeople).select(city).select(COUNT(people)).print());
         // check no side-effect
         assertEquals("SELECT p.ID, p.revenue, p.city FROM people p WHERE p.revenue>1000", query.print());
+    }
+
+    @Test
+    void selector() throws ScopeException {
+        Table tPeople = new Table("people").PK("ID");
+        Entity people = new Entity("people", tPeople);
+        Attribute revenue = people.attribute("revenue");
+        Attribute city = people.attribute("city");
+        assertEquals(Arrays.asList(new Selector[]{revenue, city}), people.getSelectors());
+        assertTrue(revenue == people.attribute("revenue"));
+        assertTrue(revenue == people.selector("revenue"));
     }
 }

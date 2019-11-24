@@ -15,13 +15,13 @@ import java.util.Optional;
  */
 public class Table extends View {
 
+    // default to false because it is killing for testing
+    private boolean quoteIdentifier = false;
+
     private String name;
     private Scope scope = new Scope();
 
     private List<Column> columns = new ArrayList<>();
-
-    // default to false because it is killing for testing
-    private boolean quoteIdentifier = false;
 
     private Optional<List<Selector>> primaryKey = Optional.empty();
 
@@ -53,13 +53,6 @@ public class Table extends View {
         return scope;
     }
 
-    protected Column register(Column column) throws ScopeException {
-        if (!column.getView().equals(this)) throw new ScopeException("cannot register a column from a different table");
-        if (columns.contains(column)) return columns.get(columns.indexOf(column));
-        columns.add(column);
-        return column;
-    }
-
     public Column column(String name) throws ScopeException {
         return register(new Column(this, name));
     }
@@ -72,6 +65,13 @@ public class Table extends View {
     @Override
     public List<? extends Selector> getSelectors() {
         return this.columns;
+    }
+
+    protected Column register(Column column) throws ScopeException {
+        if (!column.getView().equals(this)) throw new ScopeException("cannot register a column from a different table");
+        if (columns.contains(column)) return columns.get(columns.indexOf(column));
+        columns.add(column);
+        return column;
     }
 
     // PK support
