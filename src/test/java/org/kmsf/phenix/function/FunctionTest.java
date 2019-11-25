@@ -1,6 +1,7 @@
 package org.kmsf.phenix.function;
 
 import org.junit.jupiter.api.Test;
+import org.kmsf.phenix.database.Column;
 import org.kmsf.phenix.database.ScopeException;
 import org.kmsf.phenix.database.Table;
 import org.kmsf.phenix.sql.Mapping;

@@ -88,4 +88,19 @@ public class Attribute extends Selector {
             return new FunctionType(entity, definition);
         }
     }
+
+    /**
+     * the Attribute redux is the definition redux; thus Attribute is not a leaf
+     *
+     * @return
+     */
+    @Override
+    public Function redux() {
+        return definition.redux();
+    }
+
+    @Override
+    public String toString() {
+        return "[Attribute '" + name + "'=" + definition + "]";
+    }
 }

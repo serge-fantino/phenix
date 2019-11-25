@@ -92,17 +92,8 @@ public class Entity extends View {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj == this) return true;
-        if (obj instanceof View) {
-            View view = (View) obj;
-            if (view.equals(this.view)) return true;
-        }
-        if (obj instanceof Join) {
-            View target = ((Join) obj).getTarget();
-            if (target.equals(this.view)) return true;
-        }
-        return false;
+    public Function redux() {
+        return view.redux();
     }
 
     @Override

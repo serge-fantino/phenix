@@ -67,8 +67,8 @@ public class ConcreteTable extends View {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        return model.equals(obj);
+    public Function redux() {
+        return model;
     }
 
     @Override

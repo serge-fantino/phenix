@@ -1,6 +1,7 @@
 package org.kmsf.phenix.logical;
 
 import org.junit.jupiter.api.Test;
+import org.kmsf.phenix.database.Column;
 import org.kmsf.phenix.database.ScopeException;
 import org.kmsf.phenix.database.Table;
 import org.kmsf.phenix.function.FunctionType;
@@ -89,8 +90,20 @@ class QueryTest {
         assertDoesNotThrow(() -> query.selector("peopleName"));
         assertThrows(ScopeException.class, () -> query.selector("undefined"));
         assertEquals(peopleName, query.selector("peopleName"));
-        assertEquals(Collections.singleton(peopleName), query.getSelectors());
-        assertNotEquals(Collections.singleton(people.attribute("revenue")), query.getSelectors());
+        assertEquals(Collections.singletonList(peopleName), query.getSelectors());
+        assertNotEquals(Collections.singletonList(people.attribute("revenue")), query.getSelectors());
+    }
+
+    @Test
+    void redux() {
+        Table table = new Table("test");
+        Column col = new Column(table, "a");
+        Entity entity = new Entity(table);
+        Attribute attr = new Attribute(entity, "a", col);
+        Query query = new Query().select(attr);
+        assertEquals(query, query);
+        assertEquals(query, query.redux());
+        assertTrue(query.redux() == query.redux().redux());
     }
 
 }

@@ -27,7 +27,7 @@ public class FunctionType {
     }
 
     public FunctionType(List<? extends Function> functions) {
-        values.addAll(functions);
+        functions.forEach(fun -> add(fun));
     }
 
     public boolean contains(Function fun) {

@@ -107,4 +107,19 @@ public class Query extends Statement {
     public int getPrecedence() {
         return select.getPrecedence();
     }
+
+    @Override
+    public Function redux() {
+        return select.redux();
+    }
+
+    @Override
+    public int hashCode() {
+        return select.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "[Query " + hashCode() + "]";
+    }
 }

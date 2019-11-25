@@ -81,19 +81,18 @@ public class SelectClause implements Printer {
             }
 
             @Override
+            public Function redux() {
+                return definition.redux();
+            }
+
+            @Override
             public int hashCode() {
                 return definition.hashCode();
             }
 
             @Override
-            public boolean equals(Object obj) {
-                if (super.equals(obj)) return true;
-                return definition.equals(obj);
-            }
-
-            @Override
             public String toString() {
-                return "[Reference to '" + view.getName() + "'.'" + alias.orElse(definition.getName().orElse(definition.getSystemName().toString())) + "']";
+                return "[Reference to '" + view.getName().orElse("$") + "'.'" + alias.orElse(definition.getName().orElse(definition.getSystemName().toString())) + "'=" + definition + "]";
             }
         };
     }

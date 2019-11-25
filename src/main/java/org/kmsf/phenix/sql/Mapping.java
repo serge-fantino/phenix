@@ -21,4 +21,9 @@ public class Mapping {
     public String getAlias() {
         return this.alias;
     }
+
+    @Override
+    public String toString() {
+        return "(" + alias + "=" + ref.toString() + ")";
+    }
 }

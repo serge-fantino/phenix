@@ -160,15 +160,27 @@ class SelectTest {
         Table people = new Table("people").PK("peopleID");
         Column city = people.column("city");
         Column revenue = people.column("revenue");
-        Function fun = MULTIPLY(revenue, revenue);
-        Select something = new Select(people).select(fun, "squareRevenue");
+        Function square = MULTIPLY(revenue, revenue);
+        Function twice = MULTIPLY(revenue, CONST(2));
+        Select something = new Select(people).select(square, "squareRevenue");
         assertDoesNotThrow(() -> something.selector("squareRevenue"));
         assertThrows(ScopeException.class, () -> something.selector("nothingToShow"));
         Selector squareRevenue = something.selector("squareRevenue");
-        assertEquals(fun, squareRevenue);
+        assertEquals(square, squareRevenue);
+        assertNotEquals(twice, squareRevenue);
         assertEquals("SELECT p.revenue*p.revenue AS squareRevenue FROM people p", something.print());
         assertEquals(Arrays.asList(new Selector[]{squareRevenue})
                 , something.getSelectors());
+    }
+
+    @Test
+    void redux() {
+        Table test = new Table("test");
+        Column a = new Column(test, "a");
+        Select select = new Select().from(test).select(a);
+        assertEquals(select, select.redux());
+        assertTrue(select == select.redux());
+        assertTrue(select.redux() == select.redux().redux());
     }
 
 }

@@ -15,4 +15,12 @@ class ColumnTest {
         assertNotEquals(a.column("a"), a.column("b"));
     }
 
+    @Test
+    void redux() {
+        Table test = new Table("test");
+        Column a = new Column(test, "a");
+        assertEquals(a, a.redux());
+        assertTrue(a.redux() == a.redux().redux());
+    }
+
 }

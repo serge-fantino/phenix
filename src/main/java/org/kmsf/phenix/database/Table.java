@@ -127,22 +127,28 @@ public class Table extends View {
         return "[TABLE '" + name + "']";
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (super.equals(obj)) return true;
-        if (obj instanceof Table) {
-            Table t = (Table) obj;
-            return t.name.equals(this.name);
-        }
-        if (obj instanceof ConcreteTable) {
-            ConcreteTable t = (ConcreteTable) obj;
-            return t.equals(this);
-        }
-        return false;
-    }
 
     @Override
     public int hashCode() {
         return name.hashCode();
+    }
+
+    /**
+     * the Table redux is the table itself
+     *
+     * @return
+     */
+    @Override
+    public Function redux() {
+        return this;
+    }
+
+    @Override
+    public boolean identity(Function fun) {
+        if (fun instanceof Table) {
+            Table t = (Table) fun;
+            return t.name.equals(this.name);
+        }
+        return false;
     }
 }

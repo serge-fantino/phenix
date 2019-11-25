@@ -85,6 +85,7 @@ class EntityTest {
         Attribute peoples = department.join(tPeople, "peoples", EQUALS(tPeople.column("DEPT_ID_FK"), departmentPK));
         Query departmentCount = new Query(department).select(COUNT(peoples.apply(people.attribute("ID")))).groupBy(departmentPK);
         Entity headCount = new Entity("headCount", departmentCount);
+        assertEquals(headCount, departmentCount);
         assertEquals("SELECT a.* FROM (SELECT COUNT(DISTINCT p.ID), d.ID FROM department d INNER JOIN people p ON p.DEPT_ID_FK=d.ID GROUP BY d.ID) a",
                 new Query().select(headCount).print());
         Attribute peopleDepartment = people.join(department, "peopleDepartment", EQUALS(tPeople.column("DEPT_ID_FK"), departmentPK));
@@ -161,5 +162,14 @@ class EntityTest {
         assertEquals(Arrays.asList(new Selector[]{revenue, city}), people.getSelectors());
         assertTrue(revenue == people.attribute("revenue"));
         assertTrue(revenue == people.selector("revenue"));
+    }
+
+    @Test
+    void redux() {
+        Table table = new Table("test");
+        Entity entity = new Entity(table);
+        assertEquals(entity, entity.redux());
+        assertEquals(table, entity.redux());
+        assertTrue(entity.redux() == entity.redux().redux());
     }
 }

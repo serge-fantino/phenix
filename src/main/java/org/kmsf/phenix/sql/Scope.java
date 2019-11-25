@@ -26,11 +26,18 @@ public class Scope {
         Mapping mapping = scope.get(reference);
         if (mapping != null) return mapping;
         if (parentScope.isPresent()) return parentScope.get().get(reference);
-        throw new ScopeException("undefined reference to {" + reference + "} in scope");
+        throw new ScopeException("undefined reference to {" + reference + "} in scope " + this.toString());
     }
 
     public boolean contains(Function reference) {
         return scope.containsKey(reference);
     }
 
+    @Override
+    public String toString() {
+        StringBuffer result = new StringBuffer(parentScope.isPresent() ? parentScope.toString() + "+" : "[");
+        scope.values().forEach(mapping -> result.append(mapping.toString()).append(","));
+        result.append("]");
+        return result.toString();
+    }
 }

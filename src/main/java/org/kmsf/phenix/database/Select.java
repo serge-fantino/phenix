@@ -1,5 +1,6 @@
 package org.kmsf.phenix.database;
 
+import org.kmsf.phenix.function.Leaf;
 import org.kmsf.phenix.sql.*;
 import org.kmsf.phenix.function.FunctionType;
 import org.kmsf.phenix.function.Function;
@@ -11,7 +12,7 @@ import java.util.stream.Collectors;
 /**
  * The Select statement purpose is to generate a syntactically correct SQL SELECT statement
  */
-public class Select extends Statement {
+public class Select extends Statement implements Leaf {
 
     public static final String SELECT = "SELECT";
     public static final String FROM = "FROM";
@@ -259,4 +260,16 @@ public class Select extends Statement {
         }
     }
 
+    @Override
+    public Function redux() {
+        return this;
+    }
+
+    @Override
+    public boolean identity(Function fun) {
+        if (fun instanceof Select) {
+            return getSource().equals(fun.getSource());
+        }
+        return false;
+    }
 }

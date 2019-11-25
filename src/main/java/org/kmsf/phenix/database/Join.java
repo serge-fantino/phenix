@@ -38,12 +38,8 @@ public class Join extends Function {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj == this) return true;
-        if (obj instanceof View) {
-            return obj.equals(target);
-        }
-        return false;
+    public Function redux() {
+        return target.redux();
     }
 
     @Override

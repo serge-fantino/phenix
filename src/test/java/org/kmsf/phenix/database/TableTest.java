@@ -74,4 +74,11 @@ class TableTest {
         assertThrows(ScopeException.class,
                 () -> new Select().from(cPeople).select(cPeople.column("undefined")).print());
     }
+
+    @Test
+    void redux() {
+        Table test = new Table("test");
+        assertEquals(test, test.redux());
+        assertTrue(test.redux() == test.redux().redux());
+    }
 }
