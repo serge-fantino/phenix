@@ -1,5 +1,6 @@
-package org.kmsf.phenix.database.sql;
+package org.kmsf.phenix.sql;
 
+import org.kmsf.phenix.database.ScopeException;
 import org.kmsf.phenix.database.View;
 import org.kmsf.phenix.function.Function;
 
@@ -23,7 +24,7 @@ public class FromClause implements Printer {
         return view;
     }
 
-    public PrintResult print(PrintResult result) {
+    public PrintResult print(PrintResult result) throws ScopeException {
         if (view.getPrecedence() < Function.PRECEDENCE_ORDER_VIEW) result.append("(");
         view.print(scope, result);
         if (view.getPrecedence() < Function.PRECEDENCE_ORDER_VIEW) result.append(")");

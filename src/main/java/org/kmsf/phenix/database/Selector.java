@@ -18,15 +18,6 @@ public abstract class Selector extends Function {
     public abstract View getView();
 
 
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == this) return true;
-        if (obj instanceof Selector) {
-            Selector sel = (Selector) obj;
-            return sel.getView().equals(getView()) && sel.getSystemName().equals(getSystemName());
-        }
-        return false;
-    }
 
     @Override
     public int hashCode() {

@@ -6,6 +6,8 @@ import org.kmsf.phenix.function.ConstFunction;
 import org.kmsf.phenix.function.Function;
 import org.kmsf.phenix.function.FunctionType;
 
+import java.util.Arrays;
+
 import static org.kmsf.phenix.function.Functions.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -42,7 +44,7 @@ class EntityTest {
     }
 
     @Test
-    void joinCreation() {
+    void joinCreation() throws ScopeException {
         Table tPeople = new Table("people");
         Entity people = new Entity("people", tPeople);
         //
@@ -83,6 +85,7 @@ class EntityTest {
         Attribute peoples = department.join(tPeople, "peoples", EQUALS(tPeople.column("DEPT_ID_FK"), departmentPK));
         Query departmentCount = new Query(department).select(COUNT(peoples.apply(people.attribute("ID")))).groupBy(departmentPK);
         Entity headCount = new Entity("headCount", departmentCount);
+        assertEquals(headCount, departmentCount);
         assertEquals("SELECT a.* FROM (SELECT COUNT(DISTINCT p.ID), d.ID FROM department d INNER JOIN people p ON p.DEPT_ID_FK=d.ID GROUP BY d.ID) a",
                 new Query().select(headCount).print());
         Attribute peopleDepartment = people.join(department, "peopleDepartment", EQUALS(tPeople.column("DEPT_ID_FK"), departmentPK));
@@ -110,7 +113,7 @@ class EntityTest {
     }
 
     @Test
-    void checkTableEntityJoinEquals() {
+    void checkTableEntityJoinEquals() throws ScopeException {
         Table tCustomer = new Table("customer");
         Entity customer = new Entity("customer", tCustomer);
         Table tTransaction = new Table("transaction");
@@ -142,11 +145,31 @@ class EntityTest {
         Attribute revenue = people.attribute("revenue");
         Attribute city = people.attribute("city");
         Query query = new Query(people).where(GREATER(revenue, CONST(1000)));
-        assertEquals("SELECT p.* FROM people p WHERE p.revenue>1000", query.print());
+        assertEquals("SELECT p.ID, p.revenue, p.city FROM people p WHERE p.revenue>1000", query.print());
         Entity richPeople = new Entity(query);
-        assertEquals("SELECT a.city, COUNT(DISTINCT a.ID) FROM (SELECT p.* FROM people p WHERE p.revenue>1000) a",
+        assertEquals("SELECT a.city, COUNT(DISTINCT a.ID) FROM (SELECT p.ID, p.revenue, p.city FROM people p WHERE p.revenue>1000) a",
                 new Query(richPeople).select(city).select(COUNT(people)).print());
         // check no side-effect
-        assertEquals("SELECT p.* FROM people p WHERE p.revenue>1000", query.print());
+        assertEquals("SELECT p.ID, p.revenue, p.city FROM people p WHERE p.revenue>1000", query.print());
+    }
+
+    @Test
+    void selector() throws ScopeException {
+        Table tPeople = new Table("people").PK("ID");
+        Entity people = new Entity("people", tPeople);
+        Attribute revenue = people.attribute("revenue");
+        Attribute city = people.attribute("city");
+        assertEquals(Arrays.asList(new Selector[]{revenue, city}), people.getSelectors());
+        assertTrue(revenue == people.attribute("revenue"));
+        assertTrue(revenue == people.selector("revenue"));
+    }
+
+    @Test
+    void redux() {
+        Table table = new Table("test");
+        Entity entity = new Entity(table);
+        assertEquals(entity, entity.redux());
+        assertEquals(table, entity.redux());
+        assertTrue(entity.redux() == entity.redux().redux());
     }
 }

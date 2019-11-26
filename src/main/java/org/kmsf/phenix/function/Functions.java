@@ -1,15 +1,12 @@
 package org.kmsf.phenix.function;
 
-import org.kmsf.phenix.database.Column;
 import org.kmsf.phenix.database.ScopeException;
 import org.kmsf.phenix.database.View;
-import org.kmsf.phenix.database.sql.PrintResult;
-import org.kmsf.phenix.database.sql.Scope;
+import org.kmsf.phenix.sql.PrintResult;
+import org.kmsf.phenix.sql.Scope;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 public class Functions {
 
@@ -31,15 +28,13 @@ public class Functions {
     }
 
     public static Function IN(Function a, Function b) {
-        return new BinaryFunction(_IN, a, b) {
-            public PrintResult print(Scope scope, PrintResult result) {
+        return new Operator(_IN, Operator.Position.INFIX_FUNCTION, Function.PRECEDENCE_ORDER_STATEMENT, a, b) {
+            public PrintResult print(Scope scope, PrintResult result) throws ScopeException {
                 result.append(scope, a).space().append(_IN).space().append("(").append(scope, b).append(")");
                 return result;
             }
         };
     }
-
-    ;
 
     public static Function ADD(Function a, Function b) {
         return infixOperator(_ADD, Function.PRECEDENCE_LEVEL_4, a, b);
@@ -69,18 +64,18 @@ public class Functions {
         return infixOperator(_GREATER, Function.PRECEDENCE_LEVEL_6, a, b);
     }
 
-    public static Function AND(List<? extends Function> args) {
+    public static Function AND(List<Function> args) {
         assert !args.isEmpty();
         if (args.size() == 1)
             return args.get(0);// if singleton, this is a noop
-        return naryOperator(_AND, args);
+        return new Operator(_AND, Operator.Position.INFIX_FUNCTION, Function.PRECEDENCE_LEVEL_11, args);
     }
 
-    public static Function CONCAT(List<? extends Function> args) {
+    public static Function CONCAT(List<Function> args) {
         assert !args.isEmpty();
         if (args.size() == 1)
             return args.get(0);// if singleton, this is a noop
-        return naryOperator(_CONCAT, args);
+        return new Operator(_CONCAT, Operator.Position.INFIX, Function.PRECEDENCE_LEVEL_4, args);
     }
 
     public static Function STAR(View v) {
@@ -101,15 +96,20 @@ public class Functions {
             public FunctionType getSource() {
                 return new FunctionType(v);
             }
+
+            @Override
+            public Function redux() {
+                return this;
+            }
         };
     }
 
     public static Function SUM(Function a) {
-        return new UnaryFunction(_SUM, a);
+        return new Operator(_SUM, a);
     }
 
     public static Function AVG(Function a) {
-        return new UnaryFunction(_AVG, a);
+        return new Operator(_AVG, a);
     }
 
     public static Function COUNT(Function arg) throws ScopeException {
@@ -119,52 +119,16 @@ public class Functions {
             if (pk.isEmpty()) throw new ScopeException("cannot COUNT on view without a primary-key");
             return COUNT(CONCAT(pk));
         }
-        return new UnaryFunction(_COUNT, arg) {
+        return new Operator(_COUNT, arg) {
             @Override
-            public PrintResult print(Scope scope, PrintResult result) {
+            public PrintResult print(Scope scope, PrintResult result) throws ScopeException {
                 return result.append(_COUNT).append("(").append(_DISTINCT).space().append(scope, arg).append(")");
             }
         };
     }
 
     private static Function infixOperator(String operator, int precedence, Function a, Function b) {
-        return new BinaryFunction(operator, a, b) {
-            public PrintResult print(Scope scope, PrintResult result) {
-                result
-                        .append(scope, a, a.getPrecedence() > precedence)
-                        .append(operator)
-                        .append(scope, b, b.getPrecedence() > precedence);
-                return result;
-            }
-
-            @Override
-            public int getPrecedence() {
-                return precedence;
-            }
-        };
-    }
-
-    ;
-
-    private static Function naryOperator(String operator, List<? extends Function> args) {
-        assert !args.isEmpty();
-        if (args.size() == 1)
-            return args.get(0);// if singleton, this is a noop
-        return new Function() {
-            @Override
-            public PrintResult print(Scope scope, PrintResult result) {
-                for (int i = 0; i < args.size(); i++) {
-                    if (i > 0) result.space().append(operator).space();
-                    result.append(scope, args.get(i));
-                }
-                return result;
-            }
-
-            @Override
-            public FunctionType getSource() {
-                return new FunctionType(args);
-            }
-        };
+        return new Operator(operator, Operator.Position.INFIX, precedence, a, b);
     }
 
 }

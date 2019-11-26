@@ -1,18 +1,18 @@
 package org.kmsf.phenix.database;
 
-import org.kmsf.phenix.database.sql.*;
+import org.kmsf.phenix.function.Leaf;
+import org.kmsf.phenix.sql.*;
 import org.kmsf.phenix.function.FunctionType;
 import org.kmsf.phenix.function.Function;
 import org.kmsf.phenix.function.Functions;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * The Select statement purpose is to generate a syntactically correct SQL SELECT statement
  */
-public class Select extends Statement {
+public class Select extends Statement implements Leaf {
 
     public static final String SELECT = "SELECT";
     public static final String FROM = "FROM";
@@ -39,7 +39,6 @@ public class Select extends Statement {
 
     public Select(View view) {
         from(view);
-        select(Functions.STAR(view));
     }
 
     /**
@@ -61,17 +60,17 @@ public class Select extends Statement {
     }
 
     public Select select(Column column) {
-        selectors.add(new SelectClause(scope, column, getAlias(column.getName().get())));
+        selectors.add(new SelectClause(this, scope, column, getAlias(column.getName().get())));
         return this;
     }
 
     public Select select(Function expr) {
-        selectors.add(new SelectClause(scope, expr));
+        selectors.add(new SelectClause(this, scope, expr));
         return this;
     }
 
     public Select select(Function expr, String alias) {
-        selectors.add(new SelectClause(scope, expr, getAlias(alias)));
+        selectors.add(new SelectClause(this, scope, expr, getAlias(alias)));
         return this;
     }
 
@@ -99,6 +98,21 @@ public class Select extends Statement {
         return scope;
     }
 
+    @Override
+    public List<? extends Selector> getSelectors() {
+        return selectors.stream().map(clause -> clause.asSelector()).collect(Collectors.toList());
+    }
+
+    @Override
+    public Selector selector(String definition) throws ScopeException {
+        assert definition != null;
+        // the Select.selector() return a reference to a selector already defined in the scope, using its alias name
+        for (SelectClause clause : selectors) {
+            if (definition.equals(clause.getAlias().orElse(null))) return clause.asSelector();
+            if (definition.equals(clause.getDefinition().getSystemName().orElse(null))) return clause.asSelector();
+        }
+        throw new ScopeException("cannot find selector '" + definition + "'");
+    }
 
     private String getAlias(Optional<String> name) {
         if (name.isPresent())
@@ -122,12 +136,12 @@ public class Select extends Statement {
             // push a new scope
             scope = new Scope(scope);
         }
-        scope.add(view, new Mapping(view, alias));
+        scope.add(view, alias);
         // check view sources
         Optional<FunctionType> source = Optional.ofNullable(view.getSource());
         if (source.isPresent()) for (Function value : source.get().getValues()) {
             if (!scope.contains(value))
-                scope.add(value, new Mapping(view, alias));
+                scope.add(value, alias);
         }
     }
 
@@ -188,7 +202,7 @@ public class Select extends Statement {
         return print(scope, new PrintResult()).print();
     }
 
-    public PrintResult print(Scope scope, PrintResult result) {
+    public PrintResult print(Scope scope, PrintResult result) throws ScopeException {
         result.append(SELECT);
         printSelectorClause(result);
         result.space().append(FROM);
@@ -206,16 +220,27 @@ public class Select extends Statement {
         return result;
     }
 
-    private void printSelectorClause(PrintResult result) {
+    private void printSelectorClause(PrintResult result) throws ScopeException {
         if (!selectors.isEmpty()) {
             printClauseList(result, selectors);
         } else {
+            List<SelectClause> alls = new ArrayList<>();
+            for (FromClause clause : from) {
+                if (clause.getValue().getSelectors().isEmpty()) {
+                    alls.add(new SelectClause(this, scope, Functions.STAR(clause.getValue())));
+                } else {
+                    for (Selector selector : clause.getValue().getSelectors()) {
+                        Scope defScope = scope.get(clause.getValue()).getScope();
+                        alls.add(new SelectClause(this, defScope, selector));
+                    }
+                }
+            }
             // no specific selector, using STAR selector
-            printClauseList(result, from.stream().map(clause -> new SelectClause(scope, Functions.STAR(clause.getValue()))).collect(Collectors.toList()));
+            printClauseList(result, alls);
         }
     }
 
-    private void printFromClause(PrintResult result) {
+    private void printFromClause(PrintResult result) throws ScopeException {
         if (from.isEmpty()) result.error(new ScopeException("missing FROM clause"));
         for (int i = 0; i < from.size(); i++) {
             FromClause clause = from.get(i);
@@ -227,7 +252,7 @@ public class Select extends Statement {
         }
     }
 
-    private void printClauseList(PrintResult result, List<? extends Printer> clauses) {
+    private void printClauseList(PrintResult result, List<? extends Printer> clauses) throws ScopeException {
         for (int i = 0; i < clauses.size(); i++) {
             if (i > 0) result.comma();
             result.space();
@@ -236,7 +261,15 @@ public class Select extends Statement {
     }
 
     @Override
-    public Selector selector(String definition) {
-        throw new RuntimeException("NYI");
+    public Function redux() {
+        return this;
+    }
+
+    @Override
+    public boolean identity(Function fun) {
+        if (fun instanceof Select) {
+            return getSource().equals(fun.getSource());
+        }
+        return false;
     }
 }

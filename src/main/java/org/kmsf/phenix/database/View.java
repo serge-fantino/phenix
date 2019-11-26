@@ -1,10 +1,9 @@
 package org.kmsf.phenix.database;
 
-import org.kmsf.phenix.database.sql.Scope;
+import org.kmsf.phenix.sql.Scope;
 import org.kmsf.phenix.function.Function;
 
 import java.util.List;
-import java.util.Optional;
 
 public abstract class View extends Function {
 
@@ -21,7 +20,14 @@ public abstract class View extends Function {
      * @param name
      * @return
      */
-    public abstract Selector selector(String name);
+    public abstract Selector selector(String name) throws ScopeException;
+
+    /**
+     * return the selectors of the view
+     *
+     * @return
+     */
+    public abstract List<? extends Selector> getSelectors();
 
     /**
      * return the composite PrimaryKey if defined for this view

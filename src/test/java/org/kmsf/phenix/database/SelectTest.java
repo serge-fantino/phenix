@@ -3,8 +3,10 @@ package org.kmsf.phenix.database;
 import org.junit.jupiter.api.Test;
 import org.kmsf.phenix.function.Function;
 import org.kmsf.phenix.function.FunctionType;
+import org.kmsf.phenix.sql.Scope;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.kmsf.phenix.function.Functions.*;
@@ -57,7 +59,7 @@ class SelectTest {
     }
 
     @Test
-    void getSource() {
+    void getSource() throws ScopeException {
         Table table = new Table("table");
         assertEquals(new FunctionType(table), new Select().from(table).select(table.column("a")).select(table.column("b")).getSource());
     }
@@ -125,7 +127,7 @@ class SelectTest {
         Table people = new Table("people").PK("peopleID");
         Column city = people.column("city");
         Select richPeople = new Select().from(people).where(GREATER(people.column("revenue"), CONST(1000)));
-        assertEquals("SELECT p.* FROM people p WHERE p.revenue>1000", richPeople.print());
+        assertEquals("SELECT p.peopleID, p.city, p.revenue FROM people p WHERE p.revenue>1000", richPeople.print());
         Select richPeopleInBeverlyHill = new Select(richPeople).where(EQUALS(people.column("city"), CONST("Beverly Hill")));
         assertEquals(richPeople.print() + " AND p.city='Beverly Hill'", richPeopleInBeverlyHill.print());
     }
@@ -149,8 +151,36 @@ class SelectTest {
                 .where(IN(city,
                         new Select().from(people).select(city).groupBy(city).having(GREATER(SUM(revenue),
                                 MULTIPLY(CONST(3), new Select().from(people).select(SUM(revenue)))))));
-        assertEquals("SELECT p.* FROM people p WHERE p.city IN (SELECT p.city FROM people p GROUP BY p.city HAVING SUM(p.revenue)>3*(SELECT SUM(p.revenue) FROM people p))",
+        assertEquals("SELECT p.peopleID, p.city, p.revenue FROM people p WHERE p.city IN (SELECT p.city FROM people p GROUP BY p.city HAVING SUM(p.revenue)>3*(SELECT SUM(p.revenue) FROM people p))",
                 peopleInRichCity.print());
+    }
+
+    @Test
+    void testSelectors() throws ScopeException {
+        Table people = new Table("people").PK("peopleID");
+        Column city = people.column("city");
+        Column revenue = people.column("revenue");
+        Function square = MULTIPLY(revenue, revenue);
+        Function twice = MULTIPLY(revenue, CONST(2));
+        Select something = new Select(people).select(square, "squareRevenue");
+        assertDoesNotThrow(() -> something.selector("squareRevenue"));
+        assertThrows(ScopeException.class, () -> something.selector("nothingToShow"));
+        Selector squareRevenue = something.selector("squareRevenue");
+        assertEquals(square, squareRevenue);
+        assertNotEquals(twice, squareRevenue);
+        assertEquals("SELECT p.revenue*p.revenue AS squareRevenue FROM people p", something.print());
+        assertEquals(Arrays.asList(new Selector[]{squareRevenue})
+                , something.getSelectors());
+    }
+
+    @Test
+    void redux() {
+        Table test = new Table("test");
+        Column a = new Column(test, "a");
+        Select select = new Select().from(test).select(a);
+        assertEquals(select, select.redux());
+        assertTrue(select == select.redux());
+        assertTrue(select.redux() == select.redux().redux());
     }
 
 }

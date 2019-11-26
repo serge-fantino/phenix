@@ -12,6 +12,10 @@ public class FunctionType {
         //
     }
 
+    public FunctionType(Function function) {
+        values.add(function);
+    }
+
     public FunctionType(Function... functions) {
         for (Function f : functions)
             values.add(f);
@@ -23,7 +27,7 @@ public class FunctionType {
     }
 
     public FunctionType(List<? extends Function> functions) {
-        values.addAll(functions);
+        functions.forEach(fun -> add(fun));
     }
 
     public boolean contains(Function fun) {
