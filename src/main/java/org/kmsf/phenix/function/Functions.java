@@ -12,6 +12,7 @@ public class Functions {
 
     public static final String _CONCAT = "|";
     public static final String _EQUALS = "=";
+    public static final String _NOTEQUALS = "!=";
     public static final String _GREATER = ">";
     public static final String _MULTIPLY = "*";
     public static final String _ADD = "+";
@@ -48,9 +49,13 @@ public class Functions {
         return infixOperator(_EQUALS, Function.PRECEDENCE_LEVEL_7, a, b);
     }
 
+    public static Function NOTEQUALS(Function a, Function b) {
+        return infixOperator(_NOTEQUALS, Function.PRECEDENCE_LEVEL_7, a, b);
+    }
+
     public static Function EQUALS(List<? extends Function> a, List<? extends Function> b) throws ScopeException {
-        if (a.size() != b.size()) throw new ScopeException("different list size");
-        if (a.isEmpty()) throw new ScopeException("empty list");
+        if (a.size() != b.size()) throw new ScopeException("EQUALS: different list size");
+        if (a.isEmpty()) throw new ScopeException("EQUALS: empty list");
         if (a.size() == 1)
             return EQUALS(a.get(0), b.get(0));
         List<Function> functions = new ArrayList<>();
@@ -83,7 +88,7 @@ public class Functions {
             @Override
             public PrintResult print(Scope scope, PrintResult result) {
                 try {
-                    String alias = scope.get(v).getAlias();
+                    String alias = scope.resolves(v).getAlias();
                     result.append(alias).dot().append(_STAR);
                 } catch (ScopeException e) {
                     result.error(new ScopeException(e.getMessage() + " at position " + result.size()));
@@ -93,14 +98,10 @@ public class Functions {
             }
 
             @Override
-            public FunctionType getSource() {
+            public FunctionType getType() {
                 return new FunctionType(v);
             }
 
-            @Override
-            public Function redux() {
-                return this;
-            }
         };
     }
 
@@ -115,7 +116,7 @@ public class Functions {
     public static Function COUNT(Function arg) throws ScopeException {
         if (arg instanceof View) {
             View view = (View) arg;
-            List<Function> pk = view.getPK();
+            List<Function> pk = view.getPK().getKeys();
             if (pk.isEmpty()) throw new ScopeException("cannot COUNT on view without a primary-key");
             return COUNT(CONCAT(pk));
         }

@@ -2,8 +2,6 @@ package org.kmsf.phenix.logical;
 
 import org.junit.jupiter.api.Test;
 import org.kmsf.phenix.database.*;
-import org.kmsf.phenix.function.ConstFunction;
-import org.kmsf.phenix.function.Function;
 import org.kmsf.phenix.function.FunctionType;
 
 import java.util.Arrays;
@@ -33,14 +31,14 @@ class EntityTest {
         Table tPeople = new Table("people");
         Entity people = new Entity("people", tPeople);
         Attribute name = people.attribute("name");
-        assertEquals(new FunctionType(people), name.getSource());
+        assertEquals(new FunctionType(people), name.getType());
         //
         Table tDepartment = new Table("department");
         Entity department = new Entity("department", tDepartment);
         Join join = new Join(tDepartment, EQUALS(tPeople.column("DEP_ID_FK"), tDepartment.column("ID")));
         Attribute aDepartment =
                 people.attribute("department", join);
-        assertEquals(new FunctionType(tPeople,join), aDepartment.getSource());
+        assertEquals(new FunctionType(tPeople,join), aDepartment.getType());
     }
 
     @Test
@@ -52,7 +50,9 @@ class EntityTest {
         Entity department = new Entity("department", tDepartment);
         //
         Attribute peopleDepartment = people.join(department, "peopleDepartment", EQUALS(tPeople.column("DEP_ID_FK"), tDepartment.column("ID")));
-        assertEquals(new FunctionType(tPeople, tDepartment), peopleDepartment.getSource());
+        assertEquals(new FunctionType(tPeople, tDepartment), peopleDepartment.getType());
+        assertEquals(department, peopleDepartment);
+        assertEquals(peopleDepartment, department);
     }
 
     /**
@@ -101,7 +101,7 @@ class EntityTest {
     void getSource() {
         Table tPeople = new Table("people");
         Entity people = new Entity("people", tPeople);
-        assertEquals(new FunctionType(tPeople), people.getSource());
+        assertEquals(new FunctionType(tPeople), people.getType());
     }
 
     @Test
@@ -145,8 +145,11 @@ class EntityTest {
         Attribute revenue = people.attribute("revenue");
         Attribute city = people.attribute("city");
         Query query = new Query(people).where(GREATER(revenue, CONST(1000)));
-        assertEquals("SELECT p.ID, p.revenue, p.city FROM people p WHERE p.revenue>1000", query.print());
+        assertEquals("SELECT p.ID, p.revenue, p.city FROM people p WHERE p.revenue>1000",
+                query.print());
         Entity richPeople = new Entity(query);
+        assertEquals("SELECT a.* FROM (SELECT p.ID, p.revenue, p.city FROM people p WHERE p.revenue>1000) a",
+                new Query(richPeople).print());
         assertEquals("SELECT a.city, COUNT(DISTINCT a.ID) FROM (SELECT p.ID, p.revenue, p.city FROM people p WHERE p.revenue>1000) a",
                 new Query(richPeople).select(city).select(COUNT(people)).print());
         // check no side-effect
@@ -164,12 +167,4 @@ class EntityTest {
         assertTrue(revenue == people.selector("revenue"));
     }
 
-    @Test
-    void redux() {
-        Table table = new Table("test");
-        Entity entity = new Entity(table);
-        assertEquals(entity, entity.redux());
-        assertEquals(table, entity.redux());
-        assertTrue(entity.redux() == entity.redux().redux());
-    }
 }

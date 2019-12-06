@@ -1,26 +1,30 @@
 package org.kmsf.phenix.database;
 
+import static org.assertj.core.api.Assertions.*;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class ColumnTest {
 
     @Test
-    void equals() throws ScopeException {
+    void shouldImplementEqual() throws ScopeException {
+        // given
         Table a = new Table("a");
+        // when
         Table b = new Table("b");
-        assertEquals(a.column("a"), a.column("a"));
-        assertNotEquals(a.column("a"), b.column("a"));
-        assertNotEquals(a.column("a"), a.column("b"));
+        // then
+        assertThat(a.column("a")).isEqualTo(a.column("a"));
+        assertThat(a.column("a")).isNotEqualTo(b.column("a"));
+        assertThat(a.column("a")).isNotEqualTo(a.column("b"));
     }
 
     @Test
-    void redux() {
-        Table test = new Table("test");
-        Column a = new Column(test, "a");
-        assertEquals(a, a.redux());
-        assertTrue(a.redux() == a.redux().redux());
+    void shouldHaveTypeEqualsToTheDefiningTable() throws ScopeException {
+        // given
+        Table a = new Table("a");
+        // when
+        Column test = a.column("test");
+        // then
+        assertThat(test.getType().getValues()).containsExactly(a);
     }
 
 }

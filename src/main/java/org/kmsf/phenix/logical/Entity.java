@@ -6,10 +6,7 @@ import org.kmsf.phenix.sql.Scope;
 import org.kmsf.phenix.function.FunctionType;
 import org.kmsf.phenix.function.Function;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class Entity extends View {
 
@@ -22,7 +19,6 @@ public class Entity extends View {
     public Entity(View view) {
         this.name = view.getName();
         this.view = view;
-        this.scope = new Scope(view.getScope());
     }
 
     public Entity(String name, View view) {
@@ -35,42 +31,55 @@ public class Entity extends View {
     }
 
     @Override
-    public Scope getScope() {
-        return scope;
+    public List<Selector> getSelectors() {
+        return Collections.unmodifiableList(attributes);
     }
 
     @Override
-    public List<? extends Selector> getSelectors() {
-        return attributes;
-    }
-
-    @Override
-    public List<Function> getPK() {
+    public Key getPK() {
         return view.getPK();
     }
 
     public Attribute attribute(String name, Function expr) throws ScopeException {
-        FunctionType source = expr.getSource();
+        FunctionType source = expr.getType();
         if (!source.contains(view)) throw new ScopeException("invalid attribute");
         return register(new Attribute(this, name, expr));
     }
 
-    public Attribute attribute(String name) throws ScopeException {
-        Selector expr = view.selector(name);
+    public Attribute attribute(String reference) throws ScopeException {
+        return attribute(reference, reference);
+    }
+
+    public Attribute attribute(String name, String reference) throws ScopeException {
+        Optional<Attribute> attr = getAttribute(reference);
+        if (attr.isPresent()) return attr.get();
+        Selector expr = view.selector(reference);
         return register(new Attribute(this, name, expr));
     }
 
     public Attribute join(View target, String name, Function expr) throws ScopeException {
-        return register(new Attribute(this, name, new Join(target, expr)));
+        if (expr instanceof Join) {
+            return register(new Attribute(this, name, new Join(this, target, ((Join) expr).getDefinition())));
+        } else {
+            return register(new Attribute(this, name, new Join(this, target, expr)));
+        }
     }
 
     @Override
     public Selector selector(String name) throws ScopeException {
-        for (Attribute attr : attributes) {
-            if (name.equals(attr.getName().orElse(null))) return attr;
-        }
-        throw new ScopeException("attribute '" + name + "' is not defined in entity '" + getName() + "'scope");
+        return getAttribute(name).orElseThrow(() -> new ScopeException("attribute '" + name + "' is not defined in " + this + "' scope="+attributes));
+    }
 
+    @Override
+    public boolean inheritsFrom(View parent) {
+        return view.inheritsFrom(parent);
+    }
+
+    protected Optional<Attribute> getAttribute(String name) {
+        for (Attribute attr : attributes) {
+            if (name.equals(attr.getName().orElse(null))) return Optional.of(attr);
+        }
+        return Optional.empty();
     }
 
     protected Attribute register(Attribute attribute) throws ScopeException {
@@ -87,22 +96,27 @@ public class Entity extends View {
     }
 
     @Override
-    public FunctionType getSource() {
+    public FunctionType getType() {
         return new FunctionType(view);
     }
 
     @Override
-    public Function redux() {
-        return view.redux();
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Entity entity = (Entity) o;
+        return name.equals(entity.name) &&
+                view.equals(entity.view) &&
+                attributes.equals(entity.attributes);
     }
 
     @Override
     public int hashCode() {
-        return view.hashCode();
+        return Objects.hash(name, view, attributes);
     }
 
     @Override
     public String toString() {
-        return "[ENTITY: " + view.toString() + "]";
+        return "[ENTITY: '"+getName().orElse("$")+"'=" + view.toString() + "]";
     }
 }

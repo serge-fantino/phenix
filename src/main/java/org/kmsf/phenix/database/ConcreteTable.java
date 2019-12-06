@@ -1,11 +1,11 @@
 package org.kmsf.phenix.database;
 
-import org.kmsf.phenix.function.Function;
 import org.kmsf.phenix.function.FunctionType;
 import org.kmsf.phenix.sql.PrintResult;
 import org.kmsf.phenix.sql.Scope;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -30,11 +30,6 @@ public class ConcreteTable extends View {
     }
 
     @Override
-    public Scope getScope() {
-        return model.getScope();
-    }
-
-    @Override
     public Selector selector(String name) throws ScopeException {
         return column(name);
     }
@@ -47,12 +42,23 @@ public class ConcreteTable extends View {
     }
 
     @Override
-    public List<? extends Selector> getSelectors() {
+    public List<Selector> getSelectors() {
         return model.getSelectors();
     }
 
     @Override
-    public List<Function> getPK() {
+    protected Optional<Selector> accept(Selector selector) {
+        // the concrete implementation only accept existing columns
+        return getSelectors().contains(selector)?Optional.of(selector):Optional.empty();
+    }
+
+    @Override
+    public boolean inheritsFrom(View parent) {
+        return model.inheritsFrom(parent);
+    }
+
+    @Override
+    public Key getPK() {
         return model.getPK();
     }
 
@@ -62,17 +68,25 @@ public class ConcreteTable extends View {
     }
 
     @Override
-    public FunctionType getSource() {
-        return model.getSource();
+    public FunctionType getType() {
+        return model.getType();
     }
 
     @Override
-    public Function redux() {
-        return model;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ConcreteTable that = (ConcreteTable) o;
+        return Objects.equals(model, that.model);
     }
 
     @Override
     public int hashCode() {
         return model.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "[ConcreteTable "+model.getName().orElse("???")+"]";
     }
 }

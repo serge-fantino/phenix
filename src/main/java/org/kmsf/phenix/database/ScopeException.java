@@ -6,4 +6,8 @@ public class ScopeException extends Exception {
         super(message);
     }
 
+    public ScopeException(String message, Throwable e) {
+        super(message, e);
+    }
+
 }

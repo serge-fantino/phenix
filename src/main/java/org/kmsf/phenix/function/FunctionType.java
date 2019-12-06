@@ -6,18 +6,18 @@ import java.util.*;
 
 public class FunctionType {
 
-    private ArrayList<Function> values = new ArrayList<>();
+    private ArrayList<View> values = new ArrayList<>();
 
     public FunctionType() {
         //
     }
 
-    public FunctionType(Function function) {
+    public FunctionType(View function) {
         values.add(function);
     }
 
-    public FunctionType(Function... functions) {
-        for (Function f : functions)
+    public FunctionType(View... functions) {
+        for (View f : functions)
             values.add(f);
     }
 
@@ -26,15 +26,21 @@ public class FunctionType {
             addAll(f.values);
     }
 
-    public FunctionType(List<? extends Function> functions) {
+    public FunctionType(List<? extends View> functions) {
         functions.forEach(fun -> add(fun));
     }
 
-    public boolean contains(Function fun) {
+    public int size() { return values.size(); }
+
+    public boolean contains(View fun) {
         return values.contains(fun);
     }
 
-    public FunctionType add(Function fun) {
+    public boolean contains(FunctionType source) {
+        return values.containsAll(source.getValues());
+    }
+
+    public FunctionType add(View fun) {
         if (!values.contains(fun)) values.add(fun);
         return this;
     }
@@ -44,20 +50,20 @@ public class FunctionType {
         return this;
     }
 
-    public void addAll(List<Function> values) {
+    public void addAll(List<View> values) {
         values.forEach(function -> this.add(function));
     }
 
-    public List<Function> getValues() {
+    public List<View> getValues() {
         return Collections.unmodifiableList(values);
     }
 
-    public Optional<Function> getHead() {
+    public Optional<View> getHead() {
         if (values.isEmpty()) return Optional.empty();
         return Optional.ofNullable(values.get(0));
     }
 
-    public Optional<Function> getTail() {
+    public Optional<View> getTail() {
         if (values.isEmpty()) return Optional.empty();
         return Optional.ofNullable(values.get(values.size() - 1));
     }
@@ -65,14 +71,9 @@ public class FunctionType {
     @Override
     public boolean equals(Object obj) {
         if (obj == this) return true;
-        if (obj instanceof FunctionType) {
-            FunctionType flist = (FunctionType) obj;
-            return flist.values.equals(values);
-        }
-        if (values.size() == 1) {
-            return values.contains(obj);
-        }
-        return false;
+        if (!(obj instanceof FunctionType)) return false;
+        FunctionType flist = (FunctionType) obj;
+        return flist.values.equals(values);
     }
 
     @Override
@@ -84,4 +85,5 @@ public class FunctionType {
     public String toString() {
         return values.toString();
     }
+
 }

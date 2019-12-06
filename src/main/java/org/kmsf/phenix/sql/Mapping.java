@@ -1,16 +1,17 @@
 package org.kmsf.phenix.sql;
 
+import org.kmsf.phenix.database.View;
 import org.kmsf.phenix.function.Function;
 
 public class Mapping {
 
     private Scope scope;
-    private Function ref;
+    private View view;
     private String alias;
 
-    public Mapping(Scope scope, Function ref, String alias) {
+    public Mapping(Scope scope, View view, String alias) {
         this.scope = scope;
-        this.ref = ref;
+        this.view = view;
         this.alias = alias;
     }
 
@@ -22,8 +23,10 @@ public class Mapping {
         return this.alias;
     }
 
+    public View getReference() { return this.view; }
+
     @Override
     public String toString() {
-        return "(" + alias + "=" + ref.toString() + ")";
+        return "(" + alias + "=" + view.toString() + ")";
     }
 }

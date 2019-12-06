@@ -31,4 +31,9 @@ public class FromClause implements Printer {
         result.space().append(alias);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return view.toString()+" AS "+alias;
+    }
 }

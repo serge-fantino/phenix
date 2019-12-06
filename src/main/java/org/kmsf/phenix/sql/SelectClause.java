@@ -23,10 +23,14 @@ public class SelectClause implements Printer {
         this.definition = expr;
     }
 
-
     public SelectClause(View view, Scope scope, Function expr, String alias) {
         this(view, scope, expr);
         this.alias = Optional.ofNullable(alias);
+    }
+
+    public SelectClause(View view, Scope scope, Function expr, Optional<String> alias) {
+        this(view, scope, expr);
+        this.alias = alias;
     }
 
     public Function getDefinition() {
@@ -56,6 +60,11 @@ public class SelectClause implements Printer {
         result.space().append(Select.AS).space().append(alias);
     }
 
+    @Override
+    public String toString() {
+        return definition.toString()+" AS "+alias;
+    }
+
     /**
      * return a selector based on that mapping
      *
@@ -65,14 +74,24 @@ public class SelectClause implements Printer {
         return new Selector() {
 
             @Override
+            public Optional<Function> asSelectorValue() {
+                return Optional.of(this);
+            }
+
+            @Override
             public PrintResult print(Scope scope, PrintResult result) throws ScopeException {
-                String from = scope.get(view).getAlias();
+                if (scope.getContainer().equals(view)) {
+                    // the reference is used inside the container that defines it
+                    return result.append(scope, definition);
+                }
+                // the reference is used in another context than the one that defines it
+                String from = scope.resolves(view).getAlias();
                 return result.append(from).append(".").append(alias.orElse(definition.getSystemName().get()));
             }
 
             @Override
-            public FunctionType getSource() {
-                return definition.getSource();
+            public FunctionType getType() {
+                return definition.getType();
             }
 
             @Override
@@ -81,8 +100,8 @@ public class SelectClause implements Printer {
             }
 
             @Override
-            public Function redux() {
-                return definition.redux();
+            public boolean equals(Object obj) {
+                return definition.equals(obj);
             }
 
             @Override
@@ -96,4 +115,5 @@ public class SelectClause implements Printer {
             }
         };
     }
+
 }

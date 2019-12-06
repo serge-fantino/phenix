@@ -5,6 +5,7 @@ import org.kmsf.phenix.sql.PrintResult;
 import org.kmsf.phenix.sql.Scope;
 import org.kmsf.phenix.function.FunctionType;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.kmsf.phenix.function.Functions.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -12,15 +13,51 @@ import static org.junit.jupiter.api.Assertions.*;
 class JoinTest {
 
     @Test
-    public void test() throws ScopeException {
+    public void should_implements_equal_based_on_values() throws ScopeException {
+        // given
+        Table a = new Table("a").PK("ID");
+        Table b = new Table("b").PK("ID");
+        Table c = new Table("c").PK("ID");
+        // when
+        Join join = a.join(b.FK("A_ID_FK"));
+        // then
+        assertThat(join).isEqualTo(join);
+        assertThat(join).isEqualTo(a.join(b.FK("A_ID_FK")));
+        assertThat(join).isNotEqualTo(a.join(b.FK("A2_ID_FK")));
+        assertThat(join).isNotEqualTo(a.join(c.FK("A_ID_FK")));
+        assertThat(join).isNotEqualTo(b.join(c.FK("A_ID_FK")));
+    }
+
+    @Test
+    public void should_resolve_join_definition_based_on_type() throws ScopeException {
+        // given
         Table a = new Table("a");
         Table b = new Table("b");
+        var scope = new Scope(new Select());
+        scope = scope.add(a, "a");
+        scope = scope.add(b, "b");
+        // when
         Join join = new Join(b, EQUALS(a.column("ID"), b.column("A_ID_FK")));
-        assertEquals(new FunctionType(a,b), join.getSource());
-        Scope scope = new Scope();
-        scope.add(a, "a");
-        scope.add(b, "b");
-        assertEquals("INNER JOIN b ON a.ID=b.A_ID_FK", join.print(scope, new PrintResult()).toString());
+        // then
+        assertThat(join.getType()).isEqualTo(join.getType());
+        assertThat(join.getType()).isEqualTo(new FunctionType(a,join));
+        assertThat(join.print(scope, new PrintResult()).toString()).isEqualTo("a.ID=b.A_ID_FK");
+    }
+
+    @Test
+    public void should_different_join_with_same_source_and_target_be_differents() throws ScopeException {
+        // given
+        Table people = new Table("people").PK("ID");
+        Table transaction = new Table("transaction").PK("ID");
+        // when
+        Join buyer = new Join(transaction, people, EQUALS(people.column("ID"),transaction.column("BUYER_ID_FK")));
+        Join seller = new Join(transaction, people, EQUALS(people.column("ID"),transaction.column("SELLER_ID_FK")));
+        // then
+        assertNotEquals(buyer, seller);
+        assertNotEquals(buyer, people);
+        assertNotEquals(buyer, transaction);
+        assertNotEquals(people, seller);
+        assertNotEquals(people, transaction);
     }
 
 }

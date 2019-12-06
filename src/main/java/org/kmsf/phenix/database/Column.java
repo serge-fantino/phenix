@@ -1,14 +1,19 @@
 package org.kmsf.phenix.database;
 
 import org.kmsf.phenix.function.Function;
-import org.kmsf.phenix.function.Leaf;
 import org.kmsf.phenix.sql.PrintResult;
 import org.kmsf.phenix.sql.Scope;
 import org.kmsf.phenix.function.FunctionType;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.logging.Logger;
 
-public class Column extends Selector implements Leaf {
+public class Column extends Selector {
+
+    private static Logger logger = Logger.getLogger(Column.class.getName());
 
     private Table table;
     private String name;
@@ -33,39 +38,46 @@ public class Column extends Selector implements Leaf {
         return Optional.ofNullable(name);
     }
 
+    @Override
+    public Optional<Function> asSelectorValue() {
+        return Optional.of(this);
+    }
+
+    @Override
+    public List<Selector> getSelectors() {
+        return Collections.singletonList(this);
+    }
+
     public PrintResult print(Scope scope, PrintResult result) {
         try {
-            String alias = scope.get(table).getAlias();
+            logger.info("printing "+this+" from "+scope);
+            String alias = scope.resolves(table).getAlias();
             result.append(alias).append(".").appendIdentifier(name, table.isQuoteIdentifier());
         } catch (ScopeException e) {
-            result.error(new ScopeException(e.getMessage() + " at position " + result.size()));
+            result.error(
+                    new ScopeException(e.getMessage() + " at position " + result.size() + " while looking for "+this));
             result.appendIdentifier(name, table.isQuoteIdentifier());
         }
         return result;
     }
 
     @Override
-    public FunctionType getSource() {
+    public FunctionType getType() {
         return new FunctionType(table);
     }
 
-    /**
-     * a column reduction is the column itself
-     *
-     * @return
-     */
     @Override
-    public Function redux() {
-        return this;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Column column = (Column) o;
+        return table.equals(column.table) &&
+                name.equals(column.name);
     }
 
     @Override
-    public boolean identity(Function fun) {
-        if (fun instanceof Column) {
-            Column col = (Column) fun;
-            return this.table.equals(col.table) && this.name.equals(col.name);
-        }
-        return false;
+    public int hashCode() {
+        return Objects.hash(table, name);
     }
 
     @Override

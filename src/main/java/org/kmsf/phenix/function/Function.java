@@ -1,9 +1,12 @@
 package org.kmsf.phenix.function;
 
 import org.kmsf.phenix.database.ScopeException;
+import org.kmsf.phenix.database.Selector;
 import org.kmsf.phenix.sql.PrintResult;
 import org.kmsf.phenix.sql.Scope;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 public abstract class Function {
@@ -48,7 +51,7 @@ public abstract class Function {
 
     public abstract PrintResult print(Scope scope, PrintResult result) throws ScopeException;
 
-    public abstract FunctionType getSource();
+    public abstract FunctionType getType();
 
     /**
      * return the default name of the function, as defined by the system, that is without taking user modifiction into account
@@ -67,32 +70,20 @@ public abstract class Function {
         return PRECEDENCE_ORDER_DEFAULT;
     }
 
-    /**
-     * return this function value reduction, i.e. for a Function f, return a Function fx that verifies f.equals(fx) && redux(fx)==fx
-     *
-     * @return
-     */
-    public Function redux() {
+    public Function copy() {
         return this;
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == this) return true;
-        if (obj instanceof Function) {
-            return redux().identity(((Function) obj).redux());
-        }
-        return false;
-    }
-
     /**
-     * this is the identity method that check if this can be replaced by fun in a expression.
-     * Subclass may override to solve "leaf" cases, i.e. when redux(X).class==X.class
+     * return the selectors from this expression.
+     * If this is a operator, that will be the selectors required.
+     * If this is a view, that will be the defined selectors.
+     * Default implementation is to return an empty list.
      *
-     * @param fun
      * @return
      */
-    public boolean identity(Function fun) {
-        return this == fun;
+    public List<Selector> getSelectors() {
+        return Collections.emptyList();
     }
+
 }

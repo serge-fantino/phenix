@@ -7,6 +7,7 @@ import org.kmsf.phenix.function.FunctionType;
 import org.kmsf.phenix.function.Function;
 import org.kmsf.phenix.function.Functions;
 
+import java.util.Objects;
 import java.util.Optional;
 
 public class Attribute extends Selector {
@@ -56,47 +57,53 @@ public class Attribute extends Selector {
 
     public Attribute apply(Attribute expr) throws ScopeException {
         // checking the source first
-        FunctionType source = this.getSource();
-        Optional<Function> tail = source.getTail();
-        FunctionType target = expr.getSource();
-        Optional<Function> head = target.getHead();
-        if (tail.isEmpty() || head.isEmpty() || !tail.equals(head))
+        FunctionType source = this.getType();
+        Optional<View> tail = source.getTail();
+        FunctionType target = expr.getType();
+        Optional<View> head = target.getHead();
+        if (tail.isEmpty() || head.isEmpty() || !tail.get().inheritsFrom(head.get()))
             throw new ScopeException("invalid APPLY arguments " + head + " doesn't match " + tail);
         return new Attribute(expr.entity, expr.name, expr.definition) {
             @Override
-            public FunctionType getSource() {
-                return new FunctionType(source, expr.getSource());
+            public FunctionType getType() {
+                return new FunctionType(source, expr.getType());
             }
         };
     }
 
     @Override
-    public PrintResult print(Scope scope, PrintResult result) throws ScopeException {
+    public Optional<Function> asSelectorValue() {
         if (definition instanceof Join) {
-            Join join = (Join) definition;
-            return Functions.STAR(join.getTarget()).print(scope, result);
+            return Optional.empty();
         } else {
-            return definition.print(scope, result);
+            return Optional.of(this);
         }
     }
 
     @Override
-    public FunctionType getSource() {
-        if (definition.getSource().equals(entity)) {
-            return new FunctionType(entity);
-        } else {
-            return new FunctionType(entity, definition);
-        }
+    public PrintResult print(Scope scope, PrintResult result) throws ScopeException {
+        return definition.print(scope, result);
     }
 
-    /**
-     * the Attribute redux is the definition redux; thus Attribute is not a leaf
-     *
-     * @return
-     */
     @Override
-    public Function redux() {
-        return definition.redux();
+    public FunctionType getType() {
+        //return new FunctionType(entity);
+        return definition.getType();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Attribute attribute = (Attribute) o;
+        return entity.equals(attribute.entity) &&
+                definition.equals(attribute.definition) &&
+                name.equals(attribute.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(definition, name);
     }
 
     @Override

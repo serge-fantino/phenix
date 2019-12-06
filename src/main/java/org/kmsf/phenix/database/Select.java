@@ -1,18 +1,21 @@
 package org.kmsf.phenix.database;
 
-import org.kmsf.phenix.function.Leaf;
 import org.kmsf.phenix.sql.*;
 import org.kmsf.phenix.function.FunctionType;
 import org.kmsf.phenix.function.Function;
 import org.kmsf.phenix.function.Functions;
 
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
  * The Select statement purpose is to generate a syntactically correct SQL SELECT statement
  */
-public class Select extends Statement implements Leaf {
+public class Select extends Statement {
+
+    private static Logger logger = Logger.getLogger(Select.class.getName());
 
     public static final String SELECT = "SELECT";
     public static final String FROM = "FROM";
@@ -24,20 +27,21 @@ public class Select extends Statement implements Leaf {
     public static final String AS = "AS";
 
     private List<FromClause> from = new ArrayList<>();
-    private List<SelectClause> selectors = new ArrayList<>();
+    private List<SelectClause> selection = new ArrayList<>();
     private List<Function> where = new ArrayList<>();
     private List<Function> having = new ArrayList<>();
     private List<GroupByClause> groupBy = new ArrayList<>();
 
-    private Character alias = 'a';
-    private HashSet<String> aliases = new HashSet<>();
+    private AliasMap aliases = new AliasMap();
 
-    private Scope scope = new Scope();
+    private Scope scope = null;
 
     public Select() {
+        this.scope = new Scope(this);
     }
 
-    public Select(View view) {
+    public Select(View view) throws ScopeException {
+        this();
         from(view);
     }
 
@@ -49,132 +53,197 @@ public class Select extends Statement implements Leaf {
      * @param select
      */
     public Select(Select select) {
-        this.selectors = new ArrayList<>(select.selectors);
+        this.selection = new ArrayList<>(select.selection);
         this.from = new ArrayList<>(select.from);
         this.where = new ArrayList<>(select.where);
         this.having = new ArrayList<>(select.having);
         this.groupBy = new ArrayList<>(select.groupBy);
-        this.alias = select.alias;
-        this.aliases = new HashSet<>(select.aliases);
-        this.scope = new Scope(select.scope);
+        this.aliases = new AliasMap(select.aliases);
+        this.scope = select.scope;
     }
 
-    public Select select(Column column) {
-        selectors.add(new SelectClause(this, scope, column, getAlias(column.getName().get())));
+    public Select select(Function expr) throws ScopeException {
+        return select(expr, expr.getName());
+    }
+
+    public Select select(Function expr, String alias) throws ScopeException {
+        return select(expr, Optional.of(alias));
+    }
+
+    public Select select(Function expr, Optional<String> alias) throws ScopeException {
+        if (!isAcceptable(expr)) throw new ScopeException("cannot select "+expr+" in "+scope);
+        Optional<SelectClause> selector = createSelectClause(scope, expr, aliases.getAlias(alias));
+        if (selector.isPresent()) selection.add(selector.get());
         return this;
     }
 
-    public Select select(Function expr) {
-        selectors.add(new SelectClause(this, scope, expr));
-        return this;
+    protected Optional<SelectClause> addSelector(Function expr, Optional<String> alias) {
+        Optional<SelectClause> clause = createSelectClause(scope, expr, aliases.getAlias(alias));
+        if (clause.isPresent()) selection.add(clause.get());
+        return clause;
     }
 
-    public Select select(Function expr, String alias) {
-        selectors.add(new SelectClause(this, scope, expr, getAlias(alias)));
-        return this;
-    }
-
-    @Override
-    public FunctionType getSource() {
-        return new FunctionType(from.stream().map(f -> f.getValue()).collect(Collectors.toList()));
-    }
-
-    @Override
-    public List<Function> getPK() {
-        if (!groupBy.isEmpty()) {
-            // return the groupBy definition as the new PK
-            return groupBy.stream()
-                    .map(clause -> clause.getValue())
-                    .collect(Collectors.toList());
+    private Optional<SelectClause> createSelectClause(Scope scope, Function expr, Optional<String> alias) {
+        if (expr instanceof Selector) {
+            Selector selector = (Selector) expr;
+            Optional<Function> value = selector.asSelectorValue();
+            if (value.isPresent()) return Optional.of(new SelectClause(this, scope, expr, alias));
+            return Optional.empty();
+        } else {
+            return Optional.of(new SelectClause(this, scope, expr, alias));
         }
-        // only using the from - return PK even if the column is not selected
-        return from.stream()
-                .flatMap(clause -> clause.getValue().getPK().stream())
-                .collect(Collectors.toList());
+    }
+
+    /**
+     * return true if someone in the scope can accept this expression
+     * @param expr
+     * @return
+     */
+    protected boolean isAcceptable(Function expr) {
+        List<Selector> selectors = expr.getSelectors();
+        return selectors.stream().allMatch(this::isAcceptable);
+    }
+
+    protected boolean isAcceptable(Selector selector) {
+        for (Mapping mapping : scope) {
+            if (mapping.getReference().accept(selector).isPresent()) return true;
+        }
+        return false;
     }
 
     @Override
-    public Scope getScope() {
+    protected Optional<Selector> accept(Selector selector) {
+        if (getSelectors().contains(selector)) return getSelector(selector);
+        if (isAcceptable(selector)) {
+            Optional<SelectClause> override = addSelector(selector, selector.getName());
+            return Optional.ofNullable(override.isPresent() ? override.get().asSelector() : selector);
+        }
+        return Optional.empty();
+    }
+
+    public Function copy() {
+        return new Select(this);
+    }
+
+    protected Scope getScope() {
         return scope;
     }
 
     @Override
-    public List<? extends Selector> getSelectors() {
-        return selectors.stream().map(clause -> clause.asSelector()).collect(Collectors.toList());
+    public FunctionType getType() {
+        return new FunctionType(from.stream().map(f -> f.getValue()).collect(Collectors.toList()));
+    }
+
+    @Override
+    public Key getPK() {
+        if (!groupBy.isEmpty()) {
+            // return the groupBy definition as the new PK
+            return new Key(this, groupBy.stream()
+                    .map(clause -> clause.getValue())
+                    .collect(Collectors.toList()));
+        }
+        // only using the from - return PK even if the column is not selected
+        return new Key(this, from.stream()
+                .flatMap(clause -> clause.getValue().getPK().getKeys().stream())
+                .collect(Collectors.toList()));
+    }
+
+    @Override
+    public List<Selector> getSelectors() {
+        return selection.stream().map(clause -> clause.asSelector()).collect(Collectors.toList());
+    }
+
+    protected Optional<Selector> getSelector(Selector selector) {
+        for (SelectClause clause : selection) {
+            if (clause.getDefinition().equals(selector)) return Optional.of(clause.asSelector());
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public boolean inheritsFrom(View parent) {
+        for (var clause : from) {
+            if (clause.getValue().inheritsFrom(parent)) return true;
+        }
+        return false;
     }
 
     @Override
     public Selector selector(String definition) throws ScopeException {
         assert definition != null;
         // the Select.selector() return a reference to a selector already defined in the scope, using its alias name
-        for (SelectClause clause : selectors) {
+        for (SelectClause clause : selection) {
             if (definition.equals(clause.getAlias().orElse(null))) return clause.asSelector();
             if (definition.equals(clause.getDefinition().getSystemName().orElse(null))) return clause.asSelector();
         }
         throw new ScopeException("cannot find selector '" + definition + "'");
     }
 
-    private String getAlias(Optional<String> name) {
-        if (name.isPresent())
-            return getAlias(name.get().substring(0, 1));
-        else
-            return getAlias((alias++).toString());
+    public List<Function> addToScopeIfNeeded(Function fun) {
+        FunctionType type = fun.getType();
+        List<Function> added = new ArrayList<>();
+        type.getValues().forEach(
+                function -> {
+                    if (!scope.canResolves(function)) {
+                        // add the entity
+                        try {
+                            from(function);
+                            added.add(function);
+                        } catch (ScopeException e) {
+                            logger.throwing(this.getClass().getName(), "addToScopeIfNeeded", e);
+                        }
+                    }
+                }
+        );
+        return added;
     }
 
-    private String getAlias(String name) {
-        int idx = 1;
-        String alias = name;
-        while (aliases.contains(alias)) {
-            alias = name + (idx++);
-        }
-        aliases.add(alias);
-        return alias;
+    private void addToScope(View target, String alias) {
+        logger.log(Level.INFO, "registering "+target+" as alias '"+alias+"'");
+        scope = scope.add(target, alias);
     }
 
-    private void addToScope(View view, String alias) {
-        if (scope.contains(view)) {
-            // push a new scope
-            scope = new Scope(scope);
-        }
-        scope.add(view, alias);
-        // check view sources
-        Optional<FunctionType> source = Optional.ofNullable(view.getSource());
-        if (source.isPresent()) for (Function value : source.get().getValues()) {
-            if (!scope.contains(value))
-                scope.add(value, alias);
-        }
-    }
-
-    public Select from(View view) {
-        String alias = getAlias(view.getName());
-        addToScope(view, alias);
-        from.add(new FromClause(view.getScope(), view, alias));
-        return this;
-    }
-
-    public Select from(Function expr) {
-        if (expr instanceof View) {
-            return from((View) expr);
-        } else if (expr instanceof Join) {
-            return from((Join) expr);
-        } else {
+    public Select from(Function expr) throws ScopeException {
+        if (expr instanceof Join) {
+            return fromJoin((Join) expr);
+        } else if (expr instanceof View) {
+            return fromView((View) expr);
+        } else  {
             throw new RuntimeException("ERROR: handling of " + expr.toString() + " NYI");
         }
     }
 
-    private JoinClause joinClause(View view, Function join, String alias) {
-        addToScope(view, alias);
-        return new JoinClause(scope, view, join, alias);
-    }
-
-    public Select innerJoin(Table table, Function join) {
-        from.add(joinClause(table, join, getAlias(table.getName())));
+    protected Select fromView(View view) {
+        assert !(view instanceof Join);
+        View copy = (View)view.copy();
+        String alias = aliases.getViewAlias(copy.getName());
+        addToScope(copy, alias);
+        from.add(new FromClause(scope, copy, alias));
         return this;
     }
 
-    public Select from(Join join) {
-        from.add(joinClause(join.getTarget(), join.getDefinition(), getAlias(join.getTarget().getName())));
+    protected Select fromJoin(Join join) throws ScopeException {
+        try {
+            assertThatViewIsInScope(join.getSource());
+            from.add(joinClause(join, aliases.getViewAlias(join.getTarget().getName())));
+            return this;
+        } catch (ScopeException e) {
+            throw new ScopeException(e.getMessage()+ " when selecting "+join);
+        }
+    }
+
+    private JoinClause joinClause(Join join, String alias) {
+        addToScope(join, alias);
+        return new JoinClause(scope, join.getTarget(), join, alias);
+    }
+
+    public Select join(View target, Function join) throws ScopeException {
+        from.add(joinClause(new Join(target, join), aliases.getViewAlias(target.getName())));
         return this;
+    }
+
+    private void assertThatViewIsInScope(View source) throws ScopeException {
+        scope.resolves(source);
     }
 
     public Select where(Function predicate) {
@@ -221,17 +290,26 @@ public class Select extends Statement implements Leaf {
     }
 
     private void printSelectorClause(PrintResult result) throws ScopeException {
-        if (!selectors.isEmpty()) {
-            printClauseList(result, selectors);
+        if (!selection.isEmpty()) {
+            printClauseList(result, selection);
         } else {
             List<SelectClause> alls = new ArrayList<>();
+            AliasMap myAliases = new AliasMap(aliases);
             for (FromClause clause : from) {
                 if (clause.getValue().getSelectors().isEmpty()) {
-                    alls.add(new SelectClause(this, scope, Functions.STAR(clause.getValue())));
+                    alls.add(new SelectClause(this, clause.getScope(), Functions.STAR(clause.getValue())));
                 } else {
+                    List<SelectClause> forFromClause = new ArrayList<>();
                     for (Selector selector : clause.getValue().getSelectors()) {
-                        Scope defScope = scope.get(clause.getValue()).getScope();
-                        alls.add(new SelectClause(this, defScope, selector));
+                        Scope defScope = scope.resolves(selector.getType().getTail().orElse(clause.getValue())).getScope();
+                        Optional<SelectClause> select = createSelectClause(defScope, selector, myAliases.getAlias(selector.getName()));
+                        if (select.isPresent()) forFromClause.add(select.get());
+                    }
+                    if (forFromClause.isEmpty()) {
+                        // if all from's selectors are optionals
+                        alls.add(new SelectClause(this, clause.getScope(), Functions.STAR(clause.getValue())));
+                    } else {
+                        alls.addAll(forFromClause);
                     }
                 }
             }
@@ -244,10 +322,10 @@ public class Select extends Statement implements Leaf {
         if (from.isEmpty()) result.error(new ScopeException("missing FROM clause"));
         for (int i = 0; i < from.size(); i++) {
             FromClause clause = from.get(i);
-            if (i > 0 && !(clause instanceof JoinClause))
-                result.space().comma();
-            else
-                result.space();
+            if (i > 0 && !(clause instanceof JoinClause)) {
+                result.comma();
+            }
+            result.space();
             clause.print(result);
         }
     }
@@ -261,15 +339,23 @@ public class Select extends Statement implements Leaf {
     }
 
     @Override
-    public Function redux() {
-        return this;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Select select = (Select) o;
+        return from.equals(select.from) &&
+                where.equals(select.where) &&
+                having.equals(select.having) &&
+                groupBy.equals(select.groupBy);
     }
 
     @Override
-    public boolean identity(Function fun) {
-        if (fun instanceof Select) {
-            return getSource().equals(fun.getSource());
-        }
-        return false;
+    public int hashCode() {
+        return Objects.hash(from, where, having, groupBy);
+    }
+
+    @Override
+    public String toString() {
+        return "[SELECT "+getType()+"]";
     }
 }

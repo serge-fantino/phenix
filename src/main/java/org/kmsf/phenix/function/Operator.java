@@ -1,19 +1,17 @@
 package org.kmsf.phenix.function;
 
 import org.kmsf.phenix.database.ScopeException;
+import org.kmsf.phenix.database.View;
 import org.kmsf.phenix.sql.PrintResult;
 import org.kmsf.phenix.sql.Scope;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * an Operator is function transformation that applies an operator to arguments
  */
-public class Operator extends Function implements Leaf {
+public class Operator extends Function {
 
     enum Position {
         PREFIX,
@@ -89,22 +87,34 @@ public class Operator extends Function implements Leaf {
     }
 
     @Override
-    public FunctionType getSource() {
-        List<Function> values = arguments.stream().flatMap(arg -> arg.getSource().getValues().stream()).collect(Collectors.toList());
+    public FunctionType getType() {
+        List<View> values = arguments.stream().flatMap(arg -> arg.getType().getValues().stream()).collect(Collectors.toList());
         return new FunctionType(values);
     }
 
     @Override
-    public boolean identity(Function fun) {
-        if (fun instanceof Operator) {
-            if (!operator.equals(((Operator) fun).operator)) return false;
-            if (arguments.size() != ((Operator) fun).arguments.size()) return false;
-            for (int i = 0; i < arguments.size(); i++) {
-                if (!arguments.get(i).equals(((Operator) fun).arguments.get(i))) return false;
-            }
-            return true;// yes!!!
-        }
-        return false;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Operator operator1 = (Operator) o;
+        return operator.equals(operator1.operator) &&
+                arguments.equals(operator1.arguments);
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(operator, arguments);
+    }
+
+    @Override
+    public String toString() {
+        StringBuffer result = new StringBuffer(operator).append("[");
+        for (int i = 0; i < arguments.size(); i++) {
+            if (i > 0) result.append(",");
+            Function arg = arguments.get(i);
+            result.append("(").append(arg.toString()).append(")");
+        }
+        result.append("]");
+        return result.toString();
+    }
 }

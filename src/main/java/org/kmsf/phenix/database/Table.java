@@ -1,5 +1,6 @@
 package org.kmsf.phenix.database;
 
+import org.kmsf.phenix.function.Functions;
 import org.kmsf.phenix.sql.PrintResult;
 import org.kmsf.phenix.sql.Scope;
 import org.kmsf.phenix.function.Function;
@@ -19,11 +20,10 @@ public class Table extends View {
     private boolean quoteIdentifier = false;
 
     private String name;
-    private Scope scope = new Scope();
 
     private List<Column> columns = new ArrayList<>();
 
-    private Optional<List<Selector>> primaryKey = Optional.empty();
+    private Optional<Key> primaryKey = Optional.empty();
 
     public Table(String name) {
         this.name = name;
@@ -32,6 +32,18 @@ public class Table extends View {
     public Table(String name, boolean quoteIdentifier) {
         this(name);
         this.quoteIdentifier = quoteIdentifier;
+    }
+
+    protected Table(Table copy) {
+        this.quoteIdentifier = copy.quoteIdentifier;
+        this.name = copy.name;
+        this.columns = new ArrayList<>(copy.columns);
+        this.primaryKey = copy.primaryKey;
+    }
+
+    // create a copy of the table to prevent further modification
+    public Function copy() {
+        return new Table(this);
     }
 
     public boolean isQuoteIdentifier() {
@@ -48,13 +60,24 @@ public class Table extends View {
         return Optional.ofNullable(name);
     }
 
-    @Override
-    public Scope getScope() {
-        return scope;
-    }
-
     public Column column(String name) throws ScopeException {
         return register(new Column(this, name));
+    }
+
+    /**
+     * create a join to this Table from the Foreign key's view argument
+     * @param fk
+     * @return
+     * @throws ScopeException
+     */
+    public Join join(Key fk) throws ScopeException {
+        if (getPK().getKeys().isEmpty()) throw new ScopeException(this.toString()+" has no PK defined, cannot create natural join");
+        if (getPK().getKeys().size()!=fk.getKeys().size()) throw new ScopeException("cannot create natural join, keys size are different: "+this.getPK()+" versus "+fk);
+        try {
+            return new Join(fk.getView(), this, Functions.EQUALS(getPK().getKeys(), fk.getKeys()));
+        } catch (ScopeException e) {
+            throw new ScopeException("failed to create natural join from "+this+" to "+fk+": "+e.getMessage(), e);
+        }
     }
 
     @Override
@@ -63,8 +86,18 @@ public class Table extends View {
     }
 
     @Override
-    public List<? extends Selector> getSelectors() {
-        return this.columns;
+    protected Optional<Selector> accept(Selector selector) {
+        return selector.getView().inheritsFrom(this)?Optional.of(selector):Optional.empty();
+    }
+
+    @Override
+    public boolean inheritsFrom(View view) {
+        return view.equals(this);
+    }
+
+    @Override
+    public List<Selector> getSelectors() {
+        return Collections.unmodifiableList(this.columns);
     }
 
     protected Column register(Column column) throws ScopeException {
@@ -76,25 +109,19 @@ public class Table extends View {
 
     // PK support
 
-    public Table PK(String primaryKey) throws ScopeException {
-        if (this.primaryKey.isPresent()) throw new ScopeException("PrimaryKey already defined");
-        this.primaryKey = Optional.ofNullable(Collections.singletonList(column(primaryKey)));
-        return this;
-    }
-
     public Table PK(String... names) throws ScopeException {
         if (this.primaryKey.isPresent()) throw new ScopeException("PrimaryKey already defined");
         List<Selector> keys = new ArrayList<>();
         for (String name : names)
             keys.add(column(name));
-        this.primaryKey = Optional.of(keys);
+        this.primaryKey = Optional.of(new Key(this, keys));
         return this;
     }
 
     public Table PK(Selector key) throws ScopeException {
         if (this.primaryKey.isPresent()) throw new ScopeException("PrimaryKey already defined");
         if (!key.getView().equals(this)) throw new ScopeException("the key doesn't belong to this table");
-        this.primaryKey = Optional.ofNullable(Collections.singletonList(key));
+        this.primaryKey = Optional.ofNullable(new Key(this, Collections.singletonList(key)));
         return this;
     }
 
@@ -103,14 +130,22 @@ public class Table extends View {
         for (Selector key : keys) {
             if (!key.getView().equals(this)) throw new ScopeException("a key doesn't belong to this table");
         }
-        this.primaryKey = Optional.ofNullable(keys);
+        this.primaryKey = Optional.ofNullable(new Key(this, keys));
         return this;
     }
 
-    public List<Function> getPK() {
-        if (primaryKey.isPresent())
-            return Collections.unmodifiableList(primaryKey.get());
-        return Collections.emptyList();
+    public Key getPK() {
+        if (primaryKey.isPresent()) return primaryKey.get();
+        return new Key(this);
+    }
+
+    // foreign-key constructor
+
+    public Key FK(String... names) throws ScopeException {
+        List<Function> keys = new ArrayList<>();
+        for (String name : names)
+            keys.add(column(name));
+        return new Key(this, keys);
     }
 
     public PrintResult print(Scope scope, PrintResult result) {
@@ -118,8 +153,8 @@ public class Table extends View {
     }
 
     @Override
-    public FunctionType getSource() {
-        return new FunctionType();
+    public FunctionType getType() {
+        return new FunctionType(this);
     }
 
     @Override
@@ -127,28 +162,17 @@ public class Table extends View {
         return "[TABLE '" + name + "']";
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Table table = (Table) o;
+        return name.equals(table.name);
+    }
 
     @Override
     public int hashCode() {
         return name.hashCode();
     }
 
-    /**
-     * the Table redux is the table itself
-     *
-     * @return
-     */
-    @Override
-    public Function redux() {
-        return this;
-    }
-
-    @Override
-    public boolean identity(Function fun) {
-        if (fun instanceof Table) {
-            Table t = (Table) fun;
-            return t.name.equals(this.name);
-        }
-        return false;
-    }
 }

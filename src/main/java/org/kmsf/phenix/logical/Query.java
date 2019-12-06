@@ -8,6 +8,7 @@ import org.kmsf.phenix.function.FunctionType;
 import org.kmsf.phenix.function.Functions;
 
 import java.util.List;
+import java.util.Optional;
 
 public class Query extends Statement {
 
@@ -17,67 +18,59 @@ public class Query extends Statement {
     }
 
     public Query(Entity entity) {
-        addToScopeIfNeeded(entity);
+        select.addToScopeIfNeeded(entity);
     }
 
     @Override
-    public Scope getScope() {
-        return select.getScope();
-    }
-
-    @Override
-    public List<? extends Selector> getSelectors() {
+    public List<Selector> getSelectors() {
         return select.getSelectors();
     }
 
     @Override
-    public List<Function> getPK() {
+    public Key getPK() {
         return select.getPK();
     }
 
-    public Query select(Function expr) {
-        addToScopeIfNeeded(expr);
-        if (expr.getName().isPresent())
-            select.select(expr, expr.getName().get());
+    public Query select(Function expr) throws ScopeException {
+        return select(expr, expr.getName());
+    }
+
+    public Query select(Function expr, String alias) throws ScopeException {
+        return select(expr, Optional.of(alias));
+    }
+
+    public Query select(Function expr, Optional<String> alias) throws ScopeException {
+        select.addToScopeIfNeeded(expr);
+        if (alias.isPresent())
+            select.select(expr, alias.get());
         else
             select.select(expr);
         return this;
     }
 
-    public Query select(Entity entity) {
-        addToScopeIfNeeded(entity);
+    public Query select(Entity entity) throws ScopeException {
+        select.addToScopeIfNeeded(entity);
         select.select(Functions.STAR(entity));
         return this;
     }
 
-    protected void addToScopeIfNeeded(Function fun) {
-        FunctionType source = fun.getSource();
-        source.getValues().forEach(
-                function -> {
-                    if (!select.getScope().contains(function)) {
-                        // add the entity
-                        select.from(function);
-                    }
-                }
-        );
-    }
-
-    public Query from(Entity entity) {
+    public Query from(Entity entity) throws ScopeException {
         select.from(entity);
         return this;
     }
 
-    public Query from(View view) {
+    public Query from(View view) throws ScopeException {
         select.from(view);
         return this;
     }
 
     public Query where(Function predicat) {
+        select.addToScopeIfNeeded(predicat);
         select.where(predicat);
         return this;
     }
 
-    public Query groupBy(Function expr) {
+    public Query groupBy(Function expr) throws ScopeException {
         select(expr);
         select.groupBy(expr);
         return this;
@@ -89,13 +82,18 @@ public class Query extends Statement {
     }
 
     @Override
+    public boolean inheritsFrom(View parent) {
+        return select.inheritsFrom(parent);
+    }
+
+    @Override
     public PrintResult print(Scope scope, PrintResult result) throws ScopeException {
         return select.print(scope, result);
     }
 
     @Override
-    public FunctionType getSource() {
-        return select.getSource();
+    public FunctionType getType() {
+        return select.getType();
     }
 
     @Override
@@ -109,8 +107,11 @@ public class Query extends Statement {
     }
 
     @Override
-    public Function redux() {
-        return select.redux();
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Query query = (Query) o;
+        return select.equals(query.select);
     }
 
     @Override

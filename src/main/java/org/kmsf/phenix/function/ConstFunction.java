@@ -18,23 +18,16 @@ public class ConstFunction<T> extends Function {
     }
 
     @Override
-    public FunctionType getSource() {
-        return null;
+    public FunctionType getType() {
+        return new FunctionType();
     }
 
     @Override
-    public Function redux() {
-        return this;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj instanceof ConstFunction) {
-            ConstFunction<Object> c = (ConstFunction) obj;
-            return c.value.equals(this.value);
-        }
-        return false;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ConstFunction<?> that = (ConstFunction<?>) o;
+        return value.equals(that.value);
     }
 
     @Override
