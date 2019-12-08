@@ -3,12 +3,12 @@ package org.kmsf.phenix.sql;
 import org.kmsf.phenix.database.ScopeException;
 import org.kmsf.phenix.function.Function;
 
-public class GroupByClause implements Printer {
+public class SimpleClause implements Printer {
 
     private Function expr;
     private Scope scope;
 
-    public GroupByClause(Scope scope, Function expr) {
+    public SimpleClause(Scope scope, Function expr) {
         this.scope = scope;
         this.expr = expr;
     }

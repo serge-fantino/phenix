@@ -6,6 +6,14 @@ import java.util.Optional;
 
 public abstract class View extends Function {
 
+    public static boolean checkIfViewAreCompatible(View first, View second) {
+        return first.equals(second) || first.inheritsFrom(second) || second.inheritsFrom(first);
+    }
+
+    public final boolean isCompatibleWith(View other) {
+        return checkIfViewAreCompatible(this, other);
+    }
+
     /**
      * create a selector based on that name from this View scope
      *
@@ -17,10 +25,11 @@ public abstract class View extends Function {
 
     /**
      * return true if this view can accept a selector. Default implementation is to accept anything
+     * @param from : the view from which we try to accept the selector
      * @param selector
      * @return
      */
-    protected Optional<Selector> accept(Selector selector) {
+    protected Optional<Selector> accept(View from, Selector selector) {
         return Optional.ofNullable(selector);
     }
 

@@ -24,4 +24,8 @@ public abstract class Selector extends Function {
      */
     public abstract Optional<Function> asSelectorValue();
 
+    public Function unwrapReference() {
+        return this;
+    }
+
 }

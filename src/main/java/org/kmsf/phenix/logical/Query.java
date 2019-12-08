@@ -50,7 +50,7 @@ public class Query extends Statement {
 
     public Query select(Entity entity) throws ScopeException {
         select.addToScopeIfNeeded(entity);
-        select.select(Functions.STAR(entity));
+        //select.select(Functions.STAR(entity));
         return this;
     }
 
@@ -83,7 +83,7 @@ public class Query extends Statement {
 
     @Override
     public boolean inheritsFrom(View parent) {
-        return select.inheritsFrom(parent);
+        return this.equals(parent) || select.isCompatibleWith(parent);
     }
 
     @Override

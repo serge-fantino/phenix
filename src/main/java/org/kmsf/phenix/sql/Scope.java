@@ -51,28 +51,24 @@ public class Scope implements Iterable<Mapping> {
     }
 
     public Mapping resolves(View view) throws ScopeException {
-        var mapping = resolvesOptional(view);
+        var mapping = safeResolves(view);
         if (mapping.isEmpty())
             throw new ScopeException("undefined reference to {" + view + "} in scope " + this.toString());
         return mapping.get();
     }
 
     public boolean canResolves(View view) {
-        return resolvesOptional(view).isPresent();
+        return safeResolves(view).isPresent();
     }
 
-    protected Optional<Mapping> resolvesOptional(View view) {
+    protected Optional<Mapping> safeResolves(View view) {
         for (var mapping : this) {
-            if (checkIfViewAreCompatible(mapping.getReference(), view)) {
+            if (mapping.getReference().isCompatibleWith(view)) {
                 logger.log(Level.INFO, "getting alias for "+view+" as '"+mapping.getAlias()+"' from "+mapping.getReference()+" in scope level "+deepth);
                 return Optional.of(mapping);
             }
         }
         return Optional.empty();
-    }
-
-    private boolean checkIfViewAreCompatible(View first, View second) {
-        return first.equals(second) || first.inheritsFrom(second) || second.inheritsFrom(first);
     }
 
     public boolean contains(View view) {

@@ -13,6 +13,8 @@ import java.util.stream.Collectors;
  */
 public class Operator extends Function {
 
+    private static final String OPERATOR_ALIAS = "x";
+
     enum Position {
         PREFIX,
         INFIX,
@@ -46,14 +48,37 @@ public class Operator extends Function {
         this.arguments = Arrays.asList(args);
     }
 
-    public Operator(String operator, Position position, int precedence, List<Function> arguments) {
+    public Operator(String operator, Position position, int precedence, List<? extends Function> arguments) {
         this(operator, position, precedence);
         this.arguments = new ArrayList<>(arguments);
+    }
+
+    protected Operator(Operator copy, List<Function> override) {
+        this(copy.operator, copy.position, copy.precedence);
+        this.arguments = new ArrayList<>(override);
+    }
+
+    @Override
+    public Function copy() {
+        return copy(this.arguments);
+    }
+
+    public Function copy(List<Function> override) {
+        return new Operator(this, override);
     }
 
     @Override
     public int getPrecedence() {
         return precedence;
+    }
+
+    public List<Function> getArguments() {
+        return Collections.unmodifiableList(arguments);
+    }
+
+    @Override
+    public Optional<String> getName() {
+        return Optional.of(OPERATOR_ALIAS);
     }
 
     @Override

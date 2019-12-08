@@ -1,9 +1,7 @@
 package org.kmsf.phenix.database;
 
+import org.kmsf.phenix.function.*;
 import org.kmsf.phenix.sql.*;
-import org.kmsf.phenix.function.FunctionType;
-import org.kmsf.phenix.function.Function;
-import org.kmsf.phenix.function.Functions;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -28,9 +26,9 @@ public class Select extends Statement {
 
     private List<FromClause> from = new ArrayList<>();
     private List<SelectClause> selection = new ArrayList<>();
-    private List<Function> where = new ArrayList<>();
-    private List<Function> having = new ArrayList<>();
-    private List<GroupByClause> groupBy = new ArrayList<>();
+    private List<ScopedFunction> where = new ArrayList<>();
+    private List<ScopedFunction> having = new ArrayList<>();
+    private List<SimpleClause> groupBy = new ArrayList<>();
 
     private AliasMap aliases = new AliasMap();
 
@@ -71,9 +69,11 @@ public class Select extends Statement {
     }
 
     public Select select(Function expr, Optional<String> alias) throws ScopeException {
-        if (!isAcceptable(expr)) throw new ScopeException("cannot select "+expr+" in "+scope);
-        Optional<SelectClause> selector = createSelectClause(scope, expr, aliases.getAlias(alias));
-        if (selector.isPresent()) selection.add(selector.get());
+        Optional<Function> checkIfAcceptable = accept(expr);
+        if (checkIfAcceptable.isEmpty()) throw new ScopeException("cannot select "+expr+" in "+scope);
+        addSelector(checkIfAcceptable.get(), alias);
+        //Optional<SelectClause> selector = createSelectClause(scope, checkIfAcceptable.get(), aliases.getAlias(alias));
+        //if (selector.isPresent()) selection.add(selector.get());
         return this;
     }
 
@@ -94,29 +94,55 @@ public class Select extends Statement {
         }
     }
 
-    /**
-     * return true if someone in the scope can accept this expression
-     * @param expr
-     * @return
-     */
-    protected boolean isAcceptable(Function expr) {
-        List<Selector> selectors = expr.getSelectors();
-        return selectors.stream().allMatch(this::isAcceptable);
+
+    protected Optional<Function> accept(Function expr) {
+        return accept(this, expr);
     }
 
-    protected boolean isAcceptable(Selector selector) {
-        for (Mapping mapping : scope) {
-            if (mapping.getReference().accept(selector).isPresent()) return true;
+    protected Optional<Function> accept(View from, Function expr) {
+        if (expr instanceof Selector) {
+            Selector selector = (Selector) expr;
+            return Optional.ofNullable(accept(from, selector).orElse(null));
+        } else if (expr instanceof Operator) {
+            Operator op = (Operator) expr;
+            List<Optional<Function>> override = op.getArguments().stream().map(fun -> this.accept(from, fun)).collect(Collectors.toList());
+            if (override.contains(Optional.empty())) return Optional.empty();
+            return Optional.of(op.copy(override.stream().map(Optional::get).collect(Collectors.toList())));
+        } else if (expr instanceof View) {
+            View view = (View)expr;
+            try {
+                Mapping mapping = scope.resolves(view);
+                return Optional.ofNullable(mapping.getReference());
+            } catch (ScopeException e) {
+                return Optional.empty();
+            }
+        } else {
+            // TODO implement support for Operator function in select#accept()
+            throw new RuntimeException("NYI: accept("+expr+")");
         }
-        return false;
     }
 
     @Override
-    protected Optional<Selector> accept(Selector selector) {
+    protected Optional<Selector> accept(View from, Selector selector) {
         if (getSelectors().contains(selector)) return getSelector(selector);
-        if (isAcceptable(selector)) {
-            Optional<SelectClause> override = addSelector(selector, selector.getName());
-            return Optional.ofNullable(override.isPresent() ? override.get().asSelector() : selector);
+        Optional<Selector> checkIfAcceptable = isAcceptable(from, selector);
+        if (checkIfAcceptable.isPresent()) {
+            if (!from.equals(this)) {
+                // a super view is asking for a reference to an selector which is not yet selected => select it as a side effect
+                Selector newSelector = checkIfAcceptable.get();
+                Optional<SelectClause> override = addSelector(newSelector, newSelector.getName());
+                return Optional.of(override.isPresent() ? override.get().asSelector() : newSelector);
+            } else {
+                return checkIfAcceptable;
+            }
+        }
+        return Optional.empty();
+    }
+
+    protected Optional<Selector> isAcceptable(View from, Selector selector) {
+        for (Mapping mapping : scope) {
+            Optional<Selector> check = mapping.getReference().accept(from, selector);
+            if (check.isPresent()) return check;
         }
         return Optional.empty();
     }
@@ -163,7 +189,7 @@ public class Select extends Statement {
     @Override
     public boolean inheritsFrom(View parent) {
         for (var clause : from) {
-            if (clause.getValue().inheritsFrom(parent)) return true;
+            if (clause.getValue().isCompatibleWith(parent)) return true;
         }
         return false;
     }
@@ -183,19 +209,22 @@ public class Select extends Statement {
         FunctionType type = fun.getType();
         List<Function> added = new ArrayList<>();
         type.getValues().forEach(
-                function -> {
-                    if (!scope.canResolves(function)) {
-                        // add the entity
-                        try {
-                            from(function);
-                            added.add(function);
-                        } catch (ScopeException e) {
-                            logger.throwing(this.getClass().getName(), "addToScopeIfNeeded", e);
-                        }
-                    }
-                }
+                view -> added.addAll(addToScopeIfNeeded(view))
         );
         return added;
+    }
+
+    protected List<View> addToScopeIfNeeded(View view) {
+        if (!scope.canResolves(view)) {
+            // add the entity
+            try {
+                from(view);
+                return Collections.singletonList(view);
+            } catch (ScopeException e) {
+                logger.throwing(this.getClass().getName(), "addToScopeIfNeeded", e);
+            }
+        }
+        return Collections.emptyList();
     }
 
     private void addToScope(View target, String alias) {
@@ -224,8 +253,13 @@ public class Select extends Statement {
 
     protected Select fromJoin(Join join) throws ScopeException {
         try {
-            assertThatViewIsInScope(join.getSource());
-            from.add(joinClause(join, aliases.getViewAlias(join.getTarget().getName())));
+            Mapping mapping = assertThatJoinIsInScope(join);
+            if (mapping.getReference().equals(join.getSource())) {
+                from.add(joinClause(join, aliases.getViewAlias(join.getTarget().getName())));
+            } else {
+                Join relink = join.changeSource(mapping.getReference());
+                from.add(joinClause(relink, aliases.getViewAlias(join.getTarget().getName())));
+            }
             return this;
         } catch (ScopeException e) {
             throw new ScopeException(e.getMessage()+ " when selecting "+join);
@@ -242,28 +276,28 @@ public class Select extends Statement {
         return this;
     }
 
-    private void assertThatViewIsInScope(View source) throws ScopeException {
-        scope.resolves(source);
+    private Mapping assertThatJoinIsInScope(Join join) throws ScopeException {
+        return scope.resolves(join.getSource());
     }
 
     public Select where(Function predicate) {
-        where.add(predicate);
+        where.add(new ScopedFunction(scope, predicate));
         return this;
     }
 
     public Select groupBy(Function arg) {
-        groupBy.add(new GroupByClause(scope, arg));
+        groupBy.add(new SimpleClause(scope, arg));
         return this;
     }
 
     public Select groupBy(List<? extends Function> args) {
         for (Function arg : args)
-            groupBy.add(new GroupByClause(scope, arg));
+            groupBy.add(new SimpleClause(scope, arg));
         return this;
     }
 
     public Select having(Function predicate) {
-        having.add(predicate);
+        having.add(new ScopedFunction(scope, predicate));
         return this;
     }
 

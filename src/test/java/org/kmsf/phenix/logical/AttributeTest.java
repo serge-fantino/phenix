@@ -31,13 +31,13 @@ class AttributeTest {
         Table tDepartment = new Table("department").PK("ID");
         Entity department = new Entity("department", tDepartment);
         // when
-        Join join = tDepartment.join(tPeople.FK("DEP_ID_FK"));
+        Join join = tPeople.join(tDepartment,"DEP_ID_FK");
         Attribute peopleDepartment =
-                people.join(tDepartment, "department", join);
+                people.join("department", department, join);
         // then
         assertThat(new Select().from(people).addToScopeIfNeeded(join)).containsExactly(join);
-        assertThat(new Query(people).select(peopleDepartment).print().toString())
-                .isEqualTo("SELECT p.ID, p.name, p.DEP_ID_FK, d.ID FROM people p INNER JOIN department d ON d.ID=p.DEP_ID_FK");
+        assertThat(new Query().select(people).select(peopleDepartment).print())
+                .isEqualTo("SELECT p.ID, p.name, p.DEP_ID_FK, d.ID AS ID1 FROM people p INNER JOIN department d ON d.ID=p.DEP_ID_FK");
         // new Select(tPeople).from(join).print().toString()
     }
 
@@ -53,7 +53,7 @@ class AttributeTest {
         // when
         Join join = tDepartment.join(tPeople.FK("DEP_ID_FK"));
         Attribute peopleDepartment =
-                people.join(tDepartment, "department", join);
+                people.join("department", tDepartment, join);
         // then
         assertThat(new Query().select(peopleName).select(peopleDepartment.apply(depName), "depName").print())
                 .isEqualTo("SELECT p.name AS peopleName, d.name AS depName FROM people p INNER JOIN department d ON d.ID=p.DEP_ID_FK");
@@ -73,18 +73,24 @@ class AttributeTest {
 
     @Test
     void equals() throws ScopeException {
+        // given
         Table ta = new Table("a");
         Entity a = new Entity("aa", ta);
         Table tb = new Table("b");
         Entity b = new Entity("bb", tb);
-        assertEquals(a.attribute("a"), a.attribute("a"));
-        assertEquals(a.attribute("a"), a.attribute("a", ta.column("a")));
-        assertNotEquals(a.attribute("a"), a.attribute("aaa", ta.column("a")));
-        assertEquals(a.attribute("a"), ta.column("a"));
-        assertNotEquals(a.attribute("a"), a.attribute("b"));
-        assertNotEquals(a.attribute("a"), a.attribute("a", ta.column("b")));
-        assertNotEquals(a.attribute("a"), b.attribute("a"));
-        assertNotEquals(a.attribute("a"), tb.column("a"));
-        assertNotEquals(a.attribute("a"), ta.column("b"));
+        // when
+        Attribute test = a.attribute("test");
+        // then
+        assertThat(test)
+                .isEqualTo(test)
+                .isEqualTo(a.attribute("test"))
+                .isEqualTo(a.attribute("test", ta.column("test")))
+                .isNotEqualTo(a.attribute("bad"))
+                .isNotEqualTo(a.attribute("bad", ta.column("test")))
+                .isNotEqualTo(b.attribute("test"));
+        assertThat(test.unwrapReference())
+                .isEqualTo(ta.column("test"))
+                .isNotEqualTo(ta.column("bad"))
+                .isNotEqualTo(tb.column("test"));
     }
 }

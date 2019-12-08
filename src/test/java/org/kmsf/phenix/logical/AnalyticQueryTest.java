@@ -24,7 +24,7 @@ public class AnalyticQueryTest {
         Attribute totalAmount = transaction.attribute("totalAmount", Functions.SUM(tTransaction.column("amount")));
         Join join = new Join(customer, Functions.EQUALS(tCustomer.column("ID"), tTransaction.column("CUST_ID_FK")));
         Attribute transactionCustomer = transaction.attribute("transactions", join);
-        assertEquals("SELECT SUM(t.amount) AS totalAmount, c.*, c.name AS customerName FROM transaction t INNER JOIN customer c ON c.ID=t.CUST_ID_FK GROUP BY c.name",
+        assertEquals("SELECT SUM(t.amount) AS totalAmount, c.name AS customerName FROM transaction t INNER JOIN customer c ON c.ID=t.CUST_ID_FK GROUP BY c.name",
                 new Query(transaction).select(totalAmount).select(transactionCustomer).groupBy(customerName).print());
     }
 

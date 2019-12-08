@@ -19,14 +19,15 @@ public class Join extends View {
     }
 
     private static View computeSource(View target, Function definition) throws ScopeException {
-        List<Function> candidates = definition.getType().getValues().stream().filter(function -> !function.equals(target)).collect(Collectors.toList());
-        if (candidates.size()!=1 || !(candidates.get(0) instanceof View))
+        List<View> candidates = definition.getType().getValues().stream().filter(view -> !view.isCompatibleWith(target)).collect(Collectors.toList());
+        if (candidates.size()!=1)
             throw new ScopeException("cannot identify the join source; target="+target+" definition="+definition.getType().getValues());
-        return (View) candidates.get(0);
+        return candidates.get(0);
     }
 
     public Join(View source, View target, Function definition) throws ScopeException {
-        assertSourceAndTargetAreCompatibleWithDefinition(source, target, definition);
+        if (!assertSourceAndTargetAreCompatibleWithDefinition(source, target, definition))
+            throw new ScopeException("invalid source/target for this definition "+definition+" but expecting "+new FunctionType(source.getType(), target.getType()));
         this.source = source;
         this.target = target;
         this.definition = definition;
@@ -40,10 +41,11 @@ public class Join extends View {
         return new Join(target, source, definition);
     }
 
-    private void assertSourceAndTargetAreCompatibleWithDefinition(View source, View target, Function definition) throws ScopeException {
+    private boolean assertSourceAndTargetAreCompatibleWithDefinition(View source, View target, Function definition) throws ScopeException {
         FunctionType definitionSource = definition.getType();
-        if (!(definitionSource.size()==2 && definitionSource.contains(new FunctionType(source.getType(), target.getType()))))
-            throw new ScopeException("invalid join definition for this source/target: get "+definitionSource+" but expecting "+new FunctionType(source.getType(), target.getType()));
+        return definitionSource.size()>1 && definitionSource.size()<=2
+                && definitionSource.isCompatibleWith(source)
+                && definitionSource.isCompatibleWith(target);
     }
 
     public Function getDefinition() {
@@ -65,6 +67,10 @@ public class Join extends View {
         return source;
     }
 
+    public Join changeSource(View source) throws ScopeException {
+        return new Join(source, target, definition);
+    }
+
     public View getTarget() {
         return target;
     }
@@ -81,7 +87,11 @@ public class Join extends View {
 
     @Override
     public boolean inheritsFrom(View parent) {
-        return target.inheritsFrom(parent);
+        if (parent instanceof Join) {
+            Join join = (Join)parent;
+            if (!join.definition.equals(this.definition)) return false;
+        }
+        return target.isCompatibleWith(parent);
     }
 
     @Override

@@ -138,6 +138,28 @@ class SelectTest {
     }
 
     @Test
+    public void should_chain_join_scope() throws ScopeException {
+        // given
+        Table people = new Table("people").PK("ID");
+        Column name = people.column("name");
+        Table transaction = new Table("transaction").PK("ID");
+        Table address = new Table("address").PK("ID");
+        Column country = address.column("country");
+        Join buyer = transaction.join(people, "BUYER_ID_FK");
+        Join seller = transaction.join(people, "SELLER_ID_FK");
+        Join peopleAddress = people.join(address, "ADDRESS_ID_FK");
+        // when
+        Select crossBorderTransaction = new Select()
+                .from(transaction)
+                .from(buyer).select(name, "buyerName")
+                    .from(peopleAddress).select(country, "buyerCountry")
+                .from(seller).select(name, "sellerName")
+                    .from(peopleAddress).select(country, "sellerCountry");
+        // then
+        assertThat(crossBorderTransaction.print()).isEqualTo("SELECT p.name AS buyerName, a.country AS buyerCountry, p1.name AS sellerName, a1.country AS sellerCountry FROM transaction t INNER JOIN people p ON p.ID=t.BUYER_ID_FK INNER JOIN address a ON a.ID=p.ADDRESS_ID_FK INNER JOIN people p1 ON p1.ID=t.SELLER_ID_FK INNER JOIN address a1 ON a1.ID=p1.ADDRESS_ID_FK");
+    }
+
+    @Test
     void should_select_column_from_the_last_scope() throws ScopeException {
         // given
         Table people = new Table("people").PK("ID");
@@ -158,7 +180,7 @@ class SelectTest {
     }
 
     @Test
-    void should_handle_same_table_twice_in_scope() throws ScopeException {
+    void should_support_same_table_twice_in_scope() throws ScopeException {
         // given
         Table people = new Table("people").PK("ID");
         Table transaction = new Table("transaction").PK("ID");
@@ -199,7 +221,7 @@ class SelectTest {
     }
 
     @Test
-    void should_select_from_sub_select_with_ambiguous_namming() throws ScopeException {
+    void should_select_from_sub_select_with_ambiguous_naming() throws ScopeException {
         // given
         Table a = new Table("a");
         Table b = new Table("b");
@@ -280,22 +302,30 @@ class SelectTest {
                         EQUALS(customer.column("ID"), transaction.column("CUST_ID_FK")))
                 .select(SUM(transaction.column("amount")))
                 .groupBy(customer.column("name"));
-        assertEquals("SELECT c.name, SUM(t.amount) FROM customer c INNER JOIN transaction t ON c.ID=t.CUST_ID_FK GROUP BY c.name",
+        assertEquals("SELECT c.name, SUM(t.amount) AS x FROM customer c INNER JOIN transaction t ON c.ID=t.CUST_ID_FK GROUP BY c.name",
                 amountByCustomer.print());
     }
 
     @Test
     void should_copy_be_equals_to_original() throws ScopeException {
         // given
-        Table people = new Table("people");
-        Select select = new Select().from(people).select(people.column("name"));
-        // hen
+        Table people = new Table("people").PK("ID");
+        Table department = new Table("department").PK("ID");
+        Join departmentManager = people.join(department.FK("MANAGER_ID_FK"));
+        Join peopleDepartment = department.join(people.FK("DEPARTMENT_ID_FK"));
+        Column peopleName = people.column("name");
+        Column deptName = department.column("name");
+        Select select = new Select().from(people).from(peopleDepartment).select(COUNT(people)).from(departmentManager).select(peopleName);
+        // then
         Select copy = new Select(select);
         // then
+        assertThat(select).isEqualTo(select);
         assertThat(select).isEqualTo(copy);
         assertEquals(select.print(), copy.print());
-        assertEquals("SELECT p.name, p.city FROM people p", copy.select(people.column("city")).print());
-        assertEquals("SELECT p.name FROM people p", select.print());
+        assertThat(copy.groupBy(peopleName).print())
+                .isEqualTo("SELECT COUNT(DISTINCT p.ID) AS x, p1.name FROM people p INNER JOIN department d ON d.ID=p.DEPARTMENT_ID_FK INNER JOIN people p1 ON p1.ID=d.MANAGER_ID_FK GROUP BY p1.name");
+        assertThat(select.print())
+                .isEqualTo("SELECT COUNT(DISTINCT p.ID) AS x, p1.name FROM people p INNER JOIN department d ON d.ID=p.DEPARTMENT_ID_FK INNER JOIN people p1 ON p1.ID=d.MANAGER_ID_FK");
     }
 
     @Test
@@ -342,7 +372,7 @@ class SelectTest {
                         new Select().from(people).select(city).groupBy(city).having(GREATER(SUM(revenue),
                                 MULTIPLY(CONST(3), new Select().from(people).select(SUM(revenue)))))));
         // then
-        assertEquals("SELECT p.peopleID, p.city, p.revenue FROM people p WHERE p.city IN (SELECT p.city FROM people p GROUP BY p.city HAVING SUM(p.revenue)>3*(SELECT SUM(p.revenue) FROM people p))",
+        assertEquals("SELECT p.peopleID, p.city, p.revenue FROM people p WHERE p.city IN (SELECT p.city FROM people p GROUP BY p.city HAVING SUM(p.revenue)>3*(SELECT SUM(p.revenue) AS x FROM people p))",
                 peopleInRichCity.print());
     }
 
@@ -383,10 +413,11 @@ class SelectTest {
         Select something = new Select(people).select(square, "squareRevenue");
         Selector squareRevenue = something.selector("squareRevenue");
         // then
-        assertEquals(square, squareRevenue);
-        assertNotEquals(twice, squareRevenue);
-        assertEquals(Arrays.asList(new Selector[]{squareRevenue})
-                , something.getSelectors());
+        assertThat(squareRevenue).isEqualTo(squareRevenue);
+        assertThat(squareRevenue).isEqualTo(something.selector("squareRevenue"));
+        assertThat(squareRevenue.unwrapReference()).isEqualTo(square);
+        assertThat(squareRevenue.unwrapReference()).isNotEqualTo(twice);
+        assertThat(something.getSelectors()).containsExactly(squareRevenue);
     }
 
 }

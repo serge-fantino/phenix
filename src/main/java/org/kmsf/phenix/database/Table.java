@@ -1,6 +1,7 @@
 package org.kmsf.phenix.database;
 
 import org.kmsf.phenix.function.Functions;
+import org.kmsf.phenix.logical.Attribute;
 import org.kmsf.phenix.sql.PrintResult;
 import org.kmsf.phenix.sql.Scope;
 import org.kmsf.phenix.function.Function;
@@ -70,6 +71,7 @@ public class Table extends View {
      * @return
      * @throws ScopeException
      */
+    @Deprecated
     public Join join(Key fk) throws ScopeException {
         if (getPK().getKeys().isEmpty()) throw new ScopeException(this.toString()+" has no PK defined, cannot create natural join");
         if (getPK().getKeys().size()!=fk.getKeys().size()) throw new ScopeException("cannot create natural join, keys size are different: "+this.getPK()+" versus "+fk);
@@ -80,14 +82,30 @@ public class Table extends View {
         }
     }
 
+    /**
+     * Join this View using the Key(withKeys) to the Target view PK
+     * @param target
+     * @param withKeys
+     * @return
+     */
+    public Join join(View target, String ... withKeys) throws ScopeException {
+        if (target.getPK().getKeys().isEmpty()) throw new ScopeException(target.toString()+" has no PK defined, cannot create natural join");
+        if (target.getPK().getKeys().size()!=withKeys.length) throw new ScopeException("cannot create natural join, keys size are different: "+this.getPK()+" versus "+withKeys);
+        ArrayList<Function> keys = new ArrayList<>();
+        for (String key : withKeys) {
+            keys.add(column(key));
+        }
+        return new Join(this, target, Functions.EQUALS(target.getPK().getKeys(), keys));
+    }
+
     @Override
     public Selector selector(String name) throws ScopeException {
         return column(name);
     }
 
     @Override
-    protected Optional<Selector> accept(Selector selector) {
-        return selector.getView().inheritsFrom(this)?Optional.of(selector):Optional.empty();
+    protected Optional<Selector> accept(View from, Selector selector) {
+        return selector.getView().isCompatibleWith(this)?Optional.of(selector):Optional.empty();
     }
 
     @Override
@@ -140,7 +158,6 @@ public class Table extends View {
     }
 
     // foreign-key constructor
-
     public Key FK(String... names) throws ScopeException {
         List<Function> keys = new ArrayList<>();
         for (String name : names)

@@ -34,6 +34,10 @@ public class Attribute extends Selector {
         return Optional.ofNullable(name);
     }
 
+    public Function getDefinition() {
+        return definition;
+    }
+
     @Override
     public Optional<String> getSystemName() {
         if (definition instanceof Join)
@@ -61,7 +65,7 @@ public class Attribute extends Selector {
         Optional<View> tail = source.getTail();
         FunctionType target = expr.getType();
         Optional<View> head = target.getHead();
-        if (tail.isEmpty() || head.isEmpty() || !tail.get().inheritsFrom(head.get()))
+        if (tail.isEmpty() || head.isEmpty() || !tail.get().isCompatibleWith(head.get()))
             throw new ScopeException("invalid APPLY arguments " + head + " doesn't match " + tail);
         return new Attribute(expr.entity, expr.name, expr.definition) {
             @Override
@@ -78,6 +82,11 @@ public class Attribute extends Selector {
         } else {
             return Optional.of(this);
         }
+    }
+
+    @Override
+    public Function unwrapReference() {
+        return definition;
     }
 
     @Override

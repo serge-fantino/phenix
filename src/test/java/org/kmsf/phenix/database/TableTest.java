@@ -1,7 +1,10 @@
 package org.kmsf.phenix.database;
 
+import org.assertj.core.api.Assertions;
 import org.assertj.core.api.ListAssert;
 import org.junit.jupiter.api.Test;
+import org.kmsf.phenix.logical.Attribute;
+import org.kmsf.phenix.logical.Query;
 import org.kmsf.phenix.sql.PrintResult;
 import org.kmsf.phenix.sql.Scope;
 import org.kmsf.phenix.function.FunctionType;
@@ -120,6 +123,17 @@ class TableTest {
     void should_print_the_table_identifier() throws ScopeException {
         assertEquals("table", new Table("table").print(new Scope(new Select()), new PrintResult()).print());
         assertEquals("\"table\"", new Table("table", true).print(new Scope(new Select()), new PrintResult()).print());
+    }
+
+    @Test
+    void should_fails_create_join_if_no_pk() throws ScopeException {
+        // given
+        Table tPeople = new Table("people");
+        Table tDepartment = new Table("department");
+        // when
+        Throwable throwable = catchThrowable(() -> tDepartment.join(tPeople.FK("DEP_ID_FK")));
+        // then
+        assertThat(throwable).isInstanceOf(ScopeException.class).hasMessageContaining("has no PK defined");
     }
 
 }

@@ -6,7 +6,9 @@ import org.kmsf.phenix.sql.PrintResult;
 import org.kmsf.phenix.sql.Scope;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 public class Functions {
 
@@ -69,7 +71,7 @@ public class Functions {
         return infixOperator(_GREATER, Function.PRECEDENCE_LEVEL_6, a, b);
     }
 
-    public static Function AND(List<Function> args) {
+    public static Function AND(List<? extends Function> args) {
         assert !args.isEmpty();
         if (args.size() == 1)
             return args.get(0);// if singleton, this is a noop
@@ -84,25 +86,7 @@ public class Functions {
     }
 
     public static Function STAR(View v) {
-        return new Function() {
-            @Override
-            public PrintResult print(Scope scope, PrintResult result) {
-                try {
-                    String alias = scope.resolves(v).getAlias();
-                    result.append(alias).dot().append(_STAR);
-                } catch (ScopeException e) {
-                    result.error(new ScopeException(e.getMessage() + " at position " + result.size()));
-                    result.append(_STAR);
-                }
-                return result;
-            }
-
-            @Override
-            public FunctionType getType() {
-                return new FunctionType(v);
-            }
-
-        };
+        return new StarOperator(v);
     }
 
     public static Function SUM(Function a) {
@@ -118,18 +102,73 @@ public class Functions {
             View view = (View) arg;
             List<Function> pk = view.getPK().getKeys();
             if (pk.isEmpty()) throw new ScopeException("cannot COUNT on view without a primary-key");
-            return COUNT(CONCAT(pk));
+            return new CountOperator(CONCAT(pk));
         }
-        return new Operator(_COUNT, arg) {
-            @Override
-            public PrintResult print(Scope scope, PrintResult result) throws ScopeException {
-                return result.append(_COUNT).append("(").append(_DISTINCT).space().append(scope, arg).append(")");
-            }
-        };
+        return new CountOperator(arg);
     }
 
     private static Function infixOperator(String operator, int precedence, Function a, Function b) {
         return new Operator(operator, Operator.Position.INFIX, precedence, a, b);
+    }
+
+    static class CountOperator extends Operator {
+
+        private Function distinct;
+
+        public CountOperator(Function distinct) {
+            super(_COUNT, distinct);
+            this.distinct = distinct;
+        }
+
+        @Override
+        public Function copy(List<Function> override) {
+            assert override.size()==1;
+            return new CountOperator(override.get(0));
+        }
+
+        @Override
+        public PrintResult print(Scope scope, PrintResult result) throws ScopeException {
+            return result.append(_COUNT).append("(").append(_DISTINCT).space().append(scope, distinct).append(")");
+        }
+
+    }
+
+    static class StarOperator extends Operator {
+
+        private View view;
+
+        public StarOperator(View view) {
+            super(_STAR, view);
+            this.view = view;
+        }
+
+        @Override
+        public Optional<String> getName() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Function copy(List<Function> override) {
+            return new StarOperator(view);
+        }
+
+        @Override
+        public PrintResult print(Scope scope, PrintResult result) {
+            try {
+                String alias = scope.resolves(view).getAlias();
+                result.append(alias).dot().append(_STAR);
+            } catch (ScopeException e) {
+                result.error(new ScopeException(e.getMessage() + " at position " + result.size()));
+                result.append(_STAR);
+            }
+            return result;
+        }
+
+        @Override
+        public FunctionType getType() {
+            return new FunctionType(view);
+        }
+
     }
 
 }

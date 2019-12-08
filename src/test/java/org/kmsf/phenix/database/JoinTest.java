@@ -19,13 +19,13 @@ class JoinTest {
         Table b = new Table("b").PK("ID");
         Table c = new Table("c").PK("ID");
         // when
-        Join join = a.join(b.FK("A_ID_FK"));
+        Join join = b.join(a, "A_ID_FK");
         // then
         assertThat(join).isEqualTo(join);
-        assertThat(join).isEqualTo(a.join(b.FK("A_ID_FK")));
-        assertThat(join).isNotEqualTo(a.join(b.FK("A2_ID_FK")));
-        assertThat(join).isNotEqualTo(a.join(c.FK("A_ID_FK")));
-        assertThat(join).isNotEqualTo(b.join(c.FK("A_ID_FK")));
+        assertThat(join).isEqualTo(b.join( a, "A_ID_FK"));
+        assertThat(join).isNotEqualTo(b.join(a, "A2_ID_FK"));
+        assertThat(join).isNotEqualTo(c.join(a, "A_ID_FK"));
+        assertThat(join).isNotEqualTo(c.join(b, "A_ID_FK"));
     }
 
     @Test
@@ -58,6 +58,18 @@ class JoinTest {
         assertNotEquals(buyer, transaction);
         assertNotEquals(people, seller);
         assertNotEquals(people, transaction);
+    }
+
+    @Test
+    public void should_not_inherits_from_different_join() throws ScopeException {
+        // given
+        Table people = new Table("people").PK("ID");
+        Table transaction = new Table("transaction").PK("ID");
+        // when
+        Join buyer = transaction.join(people, "BUYER_ID_FK");
+        Join seller = transaction.join(people, "SELLER_ID_FK");
+        // then
+        assertThat(buyer.isCompatibleWith(seller)).isFalse();
     }
 
 }

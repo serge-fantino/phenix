@@ -8,6 +8,7 @@ import org.kmsf.phenix.function.Function;
 import org.kmsf.phenix.function.FunctionType;
 import org.kmsf.phenix.function.Functions;
 
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 public class SelectClause implements Printer {
@@ -74,8 +75,23 @@ public class SelectClause implements Printer {
         return new Selector() {
 
             @Override
+            public Optional<String> getSystemName() {
+                return alias;
+            }
+
+            @Override
+            public Optional<String> getName() {
+                return alias;
+            }
+
+            @Override
             public Optional<Function> asSelectorValue() {
                 return Optional.of(this);
+            }
+
+            @Override
+            public Function unwrapReference() {
+                return definition;
             }
 
             @Override
@@ -86,7 +102,12 @@ public class SelectClause implements Printer {
                 }
                 // the reference is used in another context than the one that defines it
                 String from = scope.resolves(view).getAlias();
-                return result.append(from).append(".").append(alias.orElse(definition.getSystemName().get()));
+                try {
+                    return result.append(from).append(".")
+                            .append(alias.orElseGet(() -> definition.getSystemName().orElseThrow()));
+                } catch (NoSuchElementException e) {
+                    throw new ScopeException("unable to print unnamed reference to "+definition);
+                }
             }
 
             @Override
@@ -101,7 +122,11 @@ public class SelectClause implements Printer {
 
             @Override
             public boolean equals(Object obj) {
-                return definition.equals(obj);
+                if (obj==this) return true;
+                if (obj instanceof Selector) {
+                    return ((Selector)obj).unwrapReference().equals(definition);
+                }
+                return false;
             }
 
             @Override

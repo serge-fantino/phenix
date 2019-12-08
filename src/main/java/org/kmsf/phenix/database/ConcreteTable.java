@@ -47,14 +47,14 @@ public class ConcreteTable extends View {
     }
 
     @Override
-    protected Optional<Selector> accept(Selector selector) {
+    protected Optional<Selector> accept(View from, Selector selector) {
         // the concrete implementation only accept existing columns
         return getSelectors().contains(selector)?Optional.of(selector):Optional.empty();
     }
 
     @Override
     public boolean inheritsFrom(View parent) {
-        return model.inheritsFrom(parent);
+        return model.isCompatibleWith(parent);
     }
 
     @Override

@@ -40,6 +40,15 @@ public class FunctionType {
         return values.containsAll(source.getValues());
     }
 
+    /**
+     * return true if at least one type is compatible with the view
+     * @param view
+     * @return
+     */
+    public boolean isCompatibleWith(View view) {
+        return values.stream().anyMatch(value -> value.isCompatibleWith(view));
+    }
+
     public FunctionType add(View fun) {
         if (!values.contains(fun)) values.add(fun);
         return this;
