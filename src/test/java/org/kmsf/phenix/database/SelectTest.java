@@ -386,7 +386,7 @@ class SelectTest {
         Select something = new Select(people).select(square, "squareRevenue");
         // then
         assertDoesNotThrow(() -> something.selector("squareRevenue"));
-        assertThrows(ScopeException.class, () -> something.selector("nothingToShow"));
+        assertThat(something.selector("nothingToShow")).isEmpty();
         assertEquals("SELECT p.revenue*p.revenue AS squareRevenue FROM people p", something.print());
     }
 
@@ -411,10 +411,10 @@ class SelectTest {
         Function square = MULTIPLY(revenue, revenue);
         Function twice = MULTIPLY(revenue, CONST(2));
         Select something = new Select(people).select(square, "squareRevenue");
-        Selector squareRevenue = something.selector("squareRevenue");
+        Selector squareRevenue = something.selector("squareRevenue").get();
         // then
         assertThat(squareRevenue).isEqualTo(squareRevenue);
-        assertThat(squareRevenue).isEqualTo(something.selector("squareRevenue"));
+        assertThat(squareRevenue).isEqualTo(something.selector("squareRevenue").get());
         assertThat(squareRevenue.unwrapReference()).isEqualTo(square);
         assertThat(squareRevenue.unwrapReference()).isNotEqualTo(twice);
         assertThat(something.getSelectors()).containsExactly(squareRevenue);

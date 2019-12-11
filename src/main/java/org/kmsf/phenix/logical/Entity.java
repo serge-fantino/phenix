@@ -13,8 +13,6 @@ public class Entity extends View {
 
     private Optional<String> name;
     private View view;
-    private Scope scope;
-
     private List<Attribute> attributes = new ArrayList<>();
 
     public Entity(View view) {
@@ -25,6 +23,17 @@ public class Entity extends View {
     public Entity(String name, View view) {
         this.name = Optional.ofNullable(name);
         this.view = (View)view.copy();
+    }
+
+    protected Entity(Entity copy) {
+        this.name = copy.name;
+        this.view = (View)copy.view.copy();
+        this.attributes = new ArrayList<>(copy.attributes);
+    }
+
+    @Override
+    public Function copy() {
+        return new Entity(this);
     }
 
     public Optional<String> getName() {
@@ -54,8 +63,9 @@ public class Entity extends View {
     public Attribute attribute(String name, String reference) throws ScopeException {
         Optional<Attribute> attr = getAttribute(reference);
         if (attr.isPresent()) return attr.get();
-        Selector expr = view.selector(reference);
-        return register(new Attribute(this, name, expr));
+        Optional<Selector> expr = view.selector(reference);
+        if (expr.isEmpty()) throw new ScopeException("attribute '" + reference + "' is not defined in " + this);
+        return register(new Attribute(this, name, expr.get()));
     }
 
     /**
@@ -68,26 +78,30 @@ public class Entity extends View {
         if (target.getPK().getKeys().isEmpty()) throw new ScopeException(target.toString()+" has no PK defined, cannot create natural join");
         if (target.getPK().getKeys().size()!=withKeys.length) throw new ScopeException("cannot create natural join, keys size are different: "+target.getPK()+" versus "+withKeys);
         ArrayList<Function> keys = new ArrayList<>();
-        for (String key : withKeys) {
-            keys.add(attribute(key));
+        for (String keyName : withKeys) {
+            Optional<Selector> key = selector(keyName);
+            if (key.isEmpty()) throw new ScopeException("key "+keyName+" is not defined in "+this+" scope");
+            keys.add(key.get());
         }
         return register(new Attribute(this, name, new Join(this, target, Functions.EQUALS(target.getPK().getKeys(), keys))));
     }
 
     /**
      * Join to this View PK from the source view suing the withKeys
-     * @param source
+     * @param target
      * @param withKeys
      * @return
      */
-    public Attribute oppositeJoin(String name, View source, String ... withKeys) throws ScopeException {
+    public Attribute oppositeJoin(String name, View target, String ... withKeys) throws ScopeException {
         if (this.getPK().getKeys().isEmpty()) throw new ScopeException(this.toString()+" has no PK defined, cannot create natural join");
         if (this.getPK().getKeys().size()!=withKeys.length) throw new ScopeException("cannot create natural join, keys size are different: "+this.getPK()+" versus "+withKeys);
         ArrayList<Function> keys = new ArrayList<>();
-        for (String key : withKeys) {
-            keys.add(source.selector(key));
+        for (String keyName : withKeys) {
+            Optional<Selector> key = target.selector(keyName);
+            if (key.isEmpty()) throw new ScopeException("key "+keyName+" is not defined in "+target+" scope");
+            keys.add(key.get());
         }
-        return register(new Attribute(this, name, new Join(source, this, Functions.EQUALS(this.getPK().getKeys(), keys))));
+        return register(new Attribute(this, name, new Join(this, target, Functions.EQUALS(this.getPK().getKeys(), keys))));
     }
 
     public Attribute join(View target, String ... withKeys) throws ScopeException {
@@ -113,8 +127,15 @@ public class Entity extends View {
     }
 
     @Override
-    public Selector selector(String name) throws ScopeException {
-        return getAttribute(name).orElseThrow(() -> new ScopeException("attribute '" + name + "' is not defined in " + this + "' scope="+attributes));
+    public Optional<Selector> selector(String name) {
+        Optional<Attribute> attribute = getAttribute(name);
+        if (attribute.isPresent()) return Optional.of(attribute.get());
+        return view.selector(name);
+    }
+
+    @Override
+    public Optional<Selector> accept(View from, Selector selector) {
+        return view.accept(from, selector);
     }
 
     @Override
@@ -140,6 +161,11 @@ public class Entity extends View {
     @Override
     public PrintResult print(Scope scope, PrintResult result) throws ScopeException {
         return view.print(scope, result);
+    }
+
+    @Override
+    public int getPrecedence() {
+        return view.getPrecedence();
     }
 
     @Override

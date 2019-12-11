@@ -98,7 +98,8 @@ public class SelectClause implements Printer {
             public PrintResult print(Scope scope, PrintResult result) throws ScopeException {
                 if (scope.getContainer().equals(view)) {
                     // the reference is used inside the container that defines it
-                    return result.append(scope, definition);
+                    // ... caveate, must use the original scope, not the current one
+                    return result.append(SelectClause.this.scope, definition);
                 }
                 // the reference is used in another context than the one that defines it
                 String from = scope.resolves(view).getAlias();

@@ -30,14 +30,18 @@ class AttributeTest {
         Attribute peopleName = people.attribute("peopleName", tPeople.column("name"));
         Table tDepartment = new Table("department").PK("ID");
         Entity department = new Entity("department", tDepartment);
+        Attribute depName = department.attribute("name");
         // when
         Join join = tPeople.join(tDepartment,"DEP_ID_FK");
         Attribute peopleDepartment =
-                people.join("department", department, join);
+                people.join("department", department, "DEP_ID_FK");
         // then
         assertThat(new Select().from(people).addToScopeIfNeeded(join)).containsExactly(join);
+        assertThat(people.getSelectors()).containsExactly(peopleName, peopleDepartment);
+        assertThat(department.getSelectors()).containsExactly(depName);
+        assertThat(peopleDepartment.getSelectors()).containsExactly(depName);
         assertThat(new Query().select(people).select(peopleDepartment).print())
-                .isEqualTo("SELECT p.ID, p.name, p.DEP_ID_FK, d.ID AS ID1 FROM people p INNER JOIN department d ON d.ID=p.DEP_ID_FK");
+                .isEqualTo("SELECT p.name AS peopleName, d.name FROM people p INNER JOIN department d ON d.ID=p.DEP_ID_FK");
         // new Select(tPeople).from(join).print().toString()
     }
 

@@ -94,7 +94,6 @@ public class Select extends Statement {
         }
     }
 
-
     protected Optional<Function> accept(Function expr) {
         return accept(this, expr);
     }
@@ -123,7 +122,7 @@ public class Select extends Statement {
     }
 
     @Override
-    protected Optional<Selector> accept(View from, Selector selector) {
+    public Optional<Selector> accept(View from, Selector selector) {
         if (getSelectors().contains(selector)) return getSelector(selector);
         Optional<Selector> checkIfAcceptable = isAcceptable(from, selector);
         if (checkIfAcceptable.isPresent()) {
@@ -195,14 +194,14 @@ public class Select extends Statement {
     }
 
     @Override
-    public Selector selector(String definition) throws ScopeException {
+    public Optional<Selector> selector(String definition) {
         assert definition != null;
         // the Select.selector() return a reference to a selector already defined in the scope, using its alias name
         for (SelectClause clause : selection) {
-            if (definition.equals(clause.getAlias().orElse(null))) return clause.asSelector();
-            if (definition.equals(clause.getDefinition().getSystemName().orElse(null))) return clause.asSelector();
+            if (definition.equals(clause.getAlias().orElse(null))) return Optional.of(clause.asSelector());
+            if (definition.equals(clause.getDefinition().getSystemName().orElse(null))) return Optional.of(clause.asSelector());
         }
-        throw new ScopeException("cannot find selector '" + definition + "'");
+        return Optional.empty();
     }
 
     public List<Function> addToScopeIfNeeded(Function fun) {
@@ -214,7 +213,7 @@ public class Select extends Statement {
         return added;
     }
 
-    protected List<View> addToScopeIfNeeded(View view) {
+    public List<View> addToScopeIfNeeded(View view) {
         if (!scope.canResolves(view)) {
             // add the entity
             try {
@@ -230,6 +229,10 @@ public class Select extends Statement {
     private void addToScope(View target, String alias) {
         logger.log(Level.INFO, "registering "+target+" as alias '"+alias+"'");
         scope = scope.add(target, alias);
+    }
+
+    protected List<FromClause> getFrom() {
+        return from;
     }
 
     public Select from(Function expr) throws ScopeException {
@@ -327,28 +330,43 @@ public class Select extends Statement {
         if (!selection.isEmpty()) {
             printClauseList(result, selection);
         } else {
-            List<SelectClause> alls = new ArrayList<>();
+            List<SelectClause> all = new ArrayList<>();
             AliasMap myAliases = new AliasMap(aliases);
             for (FromClause clause : from) {
                 if (clause.getValue().getSelectors().isEmpty()) {
-                    alls.add(new SelectClause(this, clause.getScope(), Functions.STAR(clause.getValue())));
+                    all.add(new SelectClause(this, clause.getScope(), Functions.STAR(clause.getValue())));
                 } else {
                     List<SelectClause> forFromClause = new ArrayList<>();
                     for (Selector selector : clause.getValue().getSelectors()) {
                         Scope defScope = scope.resolves(selector.getType().getTail().orElse(clause.getValue())).getScope();
                         Optional<SelectClause> select = createSelectClause(defScope, selector, myAliases.getAlias(selector.getName()));
-                        if (select.isPresent()) forFromClause.add(select.get());
+                        if (select.isPresent()) {
+                            forFromClause.add(select.get());
+                        }
                     }
+                    // add the keys if required
+                    /*
+                    int idx = 0;
+                    for (Function key : clause.getValue().getPK().getKeys()) {
+                        if (!clause.getValue().getSelectors().contains(key)) {
+                            Scope defScope = scope.resolves(key.getType().getTail().orElse(clause.getValue())).getScope();
+                            Optional<SelectClause> select = createSelectClause(defScope, key, myAliases.getAlias(key.getName()));
+                            if (select.isPresent()) {
+                                forFromClause.add(idx++, select.get());
+                            }
+                        }
+                    }
+                    */
                     if (forFromClause.isEmpty()) {
                         // if all from's selectors are optionals
-                        alls.add(new SelectClause(this, clause.getScope(), Functions.STAR(clause.getValue())));
+                        all.add(new SelectClause(this, clause.getScope(), Functions.STAR(clause.getValue())));
                     } else {
-                        alls.addAll(forFromClause);
+                        all.addAll(forFromClause);
                     }
                 }
             }
             // no specific selector, using STAR selector
-            printClauseList(result, alls);
+            printClauseList(result, all);
         }
     }
 

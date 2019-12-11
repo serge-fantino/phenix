@@ -6,6 +6,7 @@ import org.kmsf.phenix.function.FunctionType;
 import org.kmsf.phenix.function.Function;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class Join extends View {
@@ -60,7 +61,7 @@ public class Join extends View {
 
     @Override
     public FunctionType getType() {
-        return new FunctionType(source.getType(), new FunctionType(this));
+        return new FunctionType(source, this);
     }
 
     public View getSource() {
@@ -76,13 +77,18 @@ public class Join extends View {
     }
 
     @Override
-    public Selector selector(String name) throws ScopeException {
+    public Optional<Selector> selector(String name) {
         return target.selector(name);
     }
 
     @Override
     public List<Selector> getSelectors() {
         return target.getSelectors();
+    }
+
+    @Override
+    public Optional<Selector> accept(View from, Selector selector) {
+        return target.accept(from, selector);
     }
 
     @Override

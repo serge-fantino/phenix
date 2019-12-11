@@ -30,8 +30,12 @@ public class ConcreteTable extends View {
     }
 
     @Override
-    public Selector selector(String name) throws ScopeException {
-        return column(name);
+    public Optional<Selector> selector(String name) {
+        try {
+            return Optional.ofNullable(column(name));
+        } catch (ScopeException e) {
+            return Optional.empty();
+        }
     }
 
     public Column column(String name) throws ScopeException {
@@ -47,7 +51,7 @@ public class ConcreteTable extends View {
     }
 
     @Override
-    protected Optional<Selector> accept(View from, Selector selector) {
+    public Optional<Selector> accept(View from, Selector selector) {
         // the concrete implementation only accept existing columns
         return getSelectors().contains(selector)?Optional.of(selector):Optional.empty();
     }

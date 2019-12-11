@@ -49,7 +49,7 @@ class QueryTest {
         assertThat(new Query().from(people).where(EQUALS(peopleDepartment.apply(depName), CONST("R&D"))).print())
                 .isEqualTo("SELECT p.name AS peopleName, d.name AS depName FROM people p INNER JOIN department d ON p.DEP_ID_FK=d.ID WHERE d.name='R&D'");
         assertThat(new Query().select(peopleDepartment).print())
-                .isEqualTo("SELECT p.name, p.DEP_ID_FK, d.name AS depName FROM people p INNER JOIN department d ON p.DEP_ID_FK=d.ID");
+                .isEqualTo("SELECT p.name AS peopleName, d.name AS depName FROM people p INNER JOIN department d ON p.DEP_ID_FK=d.ID");
         assertThat(new Query().select(peopleName).select(peopleDepartment).print())
                 .isEqualTo("SELECT p.name AS peopleName FROM people p INNER JOIN department d ON p.DEP_ID_FK=d.ID");
     }
@@ -72,8 +72,10 @@ class QueryTest {
         // then
         assertThat(johnDoeDepartment.print())
                 .isEqualTo("SELECT d.name AS deptName, p.ID, p.name, p.DEP_ID_FK FROM department d INNER JOIN people p ON p.ID=d.MANAGER_ID_FK WHERE p.name='JohnDoe'");
-        assertThat(new Query().from(johnDoeDepartment).select(depName).select(peopleName).print())
-                .isEqualTo("SELECT a.name FROM (SELECT d.* FROM department d) a");
+        assertThat(new Query().from(johnDoeDepartment)
+                .select(depName)
+                .select(peopleName).print())
+                .isEqualTo("SELECT a.deptName, a.peopleName FROM (SELECT d.name AS deptName, p.name AS peopleName FROM department d INNER JOIN people p ON p.ID=d.MANAGER_ID_FK WHERE p.name='JohnDoe') a");
     }
 
     /**
@@ -91,8 +93,13 @@ class QueryTest {
         Entity department = new Entity("department", tDepartment);
         // when
         Attribute departmentPeoples =
-                department.oppositeJoin("peoples",tPeople,"DEP_ID_FK");
+                department.oppositeJoin("peoples",people,"DEP_ID_FK");
         // then
+        assertThat(departmentPeoples.getType().getTail()).isPresent()
+                .hasValueSatisfying(view -> {
+                    view.equals(departmentPeoples.unwrapReference());
+                    view.isCompatibleWith(people);
+                });
         assertEquals("SELECT p.name FROM (SELECT d.* FROM department d) a INNER JOIN people p ON p.DEP_ID_FK=a.ID",
                 new Query()
                         .from(new Query().select(department))
@@ -111,9 +118,9 @@ class QueryTest {
         // then
         assertThat(query.print()).isEqualTo("SELECT p.name AS peopleName FROM people p");
         assertDoesNotThrow(() -> query.selector("peopleName"));
-        assertThat(query.selector("peopleName").unwrapReference()).isEqualTo(peopleName);
-        assertThat(query.getSelectors()).containsExactly(query.selector("peopleName"));
-        assertThrows(ScopeException.class, () -> query.selector("undefined"));
+        assertThat(query.selector("peopleName").get().unwrapReference()).isEqualTo(peopleName);
+        assertThat(query.getSelectors()).containsExactly(query.selector("peopleName").get());
+        assertFalse(query.selector("undefined").isPresent());
     }
 
     @Test
@@ -137,21 +144,20 @@ class QueryTest {
         Query transborder = new Query().select(transaction)
                 .select(seller)
                     .select(people.attribute("name"), "seller_name")
-                    .select(people.attribute("invoice_address")).select(country, "seller_country");
+                    .from(people.attribute("invoice_address")).select(country, "seller_country");
         // then
         assertThat(transborder.print())
                 .isEqualTo("SELECT p.name AS seller_name, a.country AS seller_country FROM transaction t INNER JOIN people p ON p.ID=t.SELLER_ID_FK INNER JOIN address a ON a.ID=p.INVOICE_ID_FK");
         // when
         transborder.select(buyer)
                 .select(people.attribute("name"), "buyer_name")
-                .select(people.attribute("invoice_address")).select(country, "buyer_country");
+                .from(people.attribute("invoice_address"))
+                .select(country, "buyer_country");
         // then
-        assertEquals("SELECT t.*, p.*, p.name AS seller_name, a.country AS seller_country, p1.*, p1.name AS buyer_name, a1.country AS buyer_country FROM transaction t INNER JOIN people p ON p.ID=t.SELLER_ID_FK INNER JOIN address a ON p.INVOICE_ID_FK=a.ID INNER JOIN people p1 ON p1.ID=t.BUYER_ID_FK INNER JOIN address a1 ON p1.INVOICE_ID_FK=a1.ID",
-                transborder.print());
-        // when
-        transborder.where(NOTEQUALS(transborder.selector("seller_country"), transborder.selector("buyer_country")));
-        // then
-        assertEquals("",transborder.print());
+        assertThat(transborder.print())
+                .isEqualTo("SELECT p.name AS seller_name, a.country AS seller_country, p1.name AS buyer_name, a1.country AS buyer_country FROM transaction t INNER JOIN people p ON p.ID=t.SELLER_ID_FK INNER JOIN address a ON a.ID=p.INVOICE_ID_FK INNER JOIN people p1 ON p1.ID=t.BUYER_ID_FK INNER JOIN address a1 ON a1.ID=p1.INVOICE_ID_FK");
+        assertThat(transborder.where(NOTEQUALS(transborder.selector("seller_country").get(), transborder.selector("buyer_country").get())).print())
+        .isEqualTo("SELECT p.name AS seller_name, a.country AS seller_country, p1.name AS buyer_name, a1.country AS buyer_country FROM transaction t INNER JOIN people p ON p.ID=t.SELLER_ID_FK INNER JOIN address a ON a.ID=p.INVOICE_ID_FK INNER JOIN people p1 ON p1.ID=t.BUYER_ID_FK INNER JOIN address a1 ON a1.ID=p1.INVOICE_ID_FK WHERE a.country!=a1.country");
     }
 
 

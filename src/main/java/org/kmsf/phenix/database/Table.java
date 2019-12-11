@@ -1,7 +1,6 @@
 package org.kmsf.phenix.database;
 
 import org.kmsf.phenix.function.Functions;
-import org.kmsf.phenix.logical.Attribute;
 import org.kmsf.phenix.sql.PrintResult;
 import org.kmsf.phenix.sql.Scope;
 import org.kmsf.phenix.function.Function;
@@ -99,12 +98,16 @@ public class Table extends View {
     }
 
     @Override
-    public Selector selector(String name) throws ScopeException {
-        return column(name);
+    public Optional<Selector> selector(String name) {
+        try {
+            return Optional.of(column(name));
+        } catch (ScopeException e) {
+            return Optional.empty();
+        }
     }
 
     @Override
-    protected Optional<Selector> accept(View from, Selector selector) {
+    public Optional<Selector> accept(View from, Selector selector) {
         return selector.getView().isCompatibleWith(this)?Optional.of(selector):Optional.empty();
     }
 

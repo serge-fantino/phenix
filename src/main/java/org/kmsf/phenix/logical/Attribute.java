@@ -7,6 +7,7 @@ import org.kmsf.phenix.function.FunctionType;
 import org.kmsf.phenix.function.Function;
 import org.kmsf.phenix.function.Functions;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -85,6 +86,11 @@ public class Attribute extends Selector {
     }
 
     @Override
+    public List<Selector> getSelectors() {
+        return definition.getSelectors();
+    }
+
+    @Override
     public Function unwrapReference() {
         return definition;
     }
@@ -96,7 +102,6 @@ public class Attribute extends Selector {
 
     @Override
     public FunctionType getType() {
-        //return new FunctionType(entity);
         return definition.getType();
     }
 

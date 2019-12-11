@@ -5,7 +5,6 @@ import org.kmsf.phenix.sql.PrintResult;
 import org.kmsf.phenix.sql.Scope;
 import org.kmsf.phenix.function.Function;
 import org.kmsf.phenix.function.FunctionType;
-import org.kmsf.phenix.function.Functions;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +18,15 @@ public class Query extends Statement {
 
     public Query(Entity entity) {
         select.addToScopeIfNeeded(entity);
+    }
+
+    public Query(Query copy) {
+        this.select = (Select)copy.select.copy();
+    }
+
+    @Override
+    public Function copy() {
+        return new Query(this);
     }
 
     @Override
@@ -64,6 +72,12 @@ public class Query extends Statement {
         return this;
     }
 
+    public Query from(Attribute attr) throws ScopeException {
+        select.from(attr.getDefinition());
+        select.select(attr);
+        return this;
+    }
+
     public Query where(Function predicat) {
         select.addToScopeIfNeeded(predicat);
         select.where(predicat);
@@ -77,8 +91,13 @@ public class Query extends Statement {
     }
 
     @Override
-    public Selector selector(String name) throws ScopeException {
+    public Optional<Selector> selector(String name) {
         return select.selector(name);
+    }
+
+    @Override
+    public Optional<Selector> accept(View from, Selector selector) {
+        return select.accept(from, selector);
     }
 
     @Override
@@ -99,11 +118,6 @@ public class Query extends Statement {
     @Override
     public String print() throws ScopeException {
         return select.print();
-    }
-
-    @Override
-    public int getPrecedence() {
-        return select.getPrecedence();
     }
 
     @Override

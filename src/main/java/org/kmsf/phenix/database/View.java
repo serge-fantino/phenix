@@ -15,12 +15,12 @@ public abstract class View extends Function {
     }
 
     /**
-     * create a selector based on that name from this View scope
+     * create a selector based on that name from this View scope if possible
      *
      * @param name
      * @return
      */
-    public abstract Selector selector(String name) throws ScopeException;
+    public abstract Optional<Selector> selector(String name);
 
 
     /**
@@ -29,8 +29,9 @@ public abstract class View extends Function {
      * @param selector
      * @return
      */
-    protected Optional<Selector> accept(View from, Selector selector) {
-        return Optional.ofNullable(selector);
+    public Optional<Selector> accept(View from, Selector selector) {
+        //return Optional.ofNullable(selector);
+        throw new RuntimeException("NYI");
     }
 
     /**

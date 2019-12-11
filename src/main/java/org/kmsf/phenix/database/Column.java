@@ -50,7 +50,7 @@ public class Column extends Selector {
 
     public PrintResult print(Scope scope, PrintResult result) {
         try {
-            logger.info("printing "+this+" from "+scope);
+            //logger.info("printing "+this+" from "+scope);
             String alias = scope.resolves(table).getAlias();
             result.append(alias).append(".").appendIdentifier(name, table.isQuoteIdentifier());
         } catch (ScopeException e) {

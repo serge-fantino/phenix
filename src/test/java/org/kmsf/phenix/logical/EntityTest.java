@@ -199,17 +199,17 @@ class EntityTest {
         Attribute revenue = people.attribute("revenue");
         Attribute city = people.attribute("city");
         Query query = new Query(people).where(GREATER(revenue, CONST(1000)));
-        assertEquals("SELECT p.ID, p.revenue, p.city FROM people p WHERE p.revenue>1000",
+        assertEquals("SELECT p.revenue, p.city FROM people p WHERE p.revenue>1000",
                 query.print());
         // when
         Entity richPeople = new Entity(query);
         // then
-        assertEquals("SELECT a.* FROM (SELECT p.ID, p.revenue, p.city FROM people p WHERE p.revenue>1000) a",
+        assertEquals("SELECT a.* FROM (SELECT p.revenue, p.city FROM people p WHERE p.revenue>1000) a",
                 new Query(richPeople).print());
-        assertEquals("SELECT a.city, COUNT(DISTINCT a.ID) AS x FROM (SELECT p.ID, p.revenue, p.city FROM people p WHERE p.revenue>1000) a",
+        assertEquals("SELECT a.city, COUNT(DISTINCT a.ID) AS x FROM (SELECT p.city, p.ID FROM people p WHERE p.revenue>1000) a",
                 new Query(richPeople).select(city).select(COUNT(people)).print());
         // check no side-effect
-        assertEquals("SELECT p.ID, p.revenue, p.city FROM people p WHERE p.revenue>1000", query.print());
+        assertEquals("SELECT p.revenue, p.city FROM people p WHERE p.revenue>1000", query.print());
     }
 
     @Test
@@ -223,7 +223,7 @@ class EntityTest {
         // then
         assertThat(people.getSelectors()).containsExactly(revenue, city);
         assertTrue(revenue == people.attribute("revenue"));
-        assertTrue(revenue == people.selector("revenue"));
+        assertTrue(revenue == people.selector("revenue").get());
     }
 
     @Test
@@ -240,7 +240,7 @@ class EntityTest {
         Attribute peopleDepartment = people.join(department, "department_id_fk");
         // then
         assertThat(new Query().select(people).select(peopleDepartment).print())
-                .isEqualTo("SELECT p.ID, p.firstName, p.lastName, p.department_id_fk, d.city FROM people p INNER JOIN department d ON d.ID=p.department_id_fk");
+                .isEqualTo("SELECT p.firstName, p.lastName, d.city FROM people p INNER JOIN department d ON d.ID=p.department_id_fk");
     }
 
 }
