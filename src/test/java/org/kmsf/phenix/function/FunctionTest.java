@@ -5,6 +5,7 @@ import org.kmsf.phenix.database.Column;
 import org.kmsf.phenix.database.ScopeException;
 import org.kmsf.phenix.database.Select;
 import org.kmsf.phenix.database.Table;
+import org.kmsf.phenix.logical.Entity;
 import org.kmsf.phenix.sql.Mapping;
 import org.kmsf.phenix.sql.PrintResult;
 import org.kmsf.phenix.sql.Scope;
@@ -14,6 +15,7 @@ import java.util.Collections;
 import static org.kmsf.phenix.function.Functions.*;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 
 class FunctionTest {
 
@@ -45,6 +47,37 @@ class FunctionTest {
         assertEquals(
                 "10*10+10*10",
                 ADD(MULTIPLY(CONST(10), CONST(10)), MULTIPLY(CONST(10), CONST(10))).print(new Scope(new Select()), new PrintResult()).print());
+    }
+
+    @Test
+    void should_relink_not_change_original() throws ScopeException {
+        // given
+        Table t = new Table("t");
+        Entity e = new Entity("e", t);
+        // when
+        Column a = t.column("a");
+        // then
+        assertThat(a.relinkTo(e).getType().getValues()).containsExactly(e);
+        assertThat(a.getType().getValues()).containsExactly(t);
+    }
+
+    @Test
+    void should_be_equals_when_relinked() throws ScopeException {
+        // given
+        Table t = new Table("t");
+        Entity e = new Entity("e", t);
+        // when
+        Column a = t.column("a");
+        // then
+        assertThat(a.relinkTo(e)).isEqualTo(a);
+        assertThat(a).isEqualTo(a.relinkTo(e));
+        // when
+        Table u = new Table("u");
+        Entity f = new Entity("f", u);
+        Column b = u.column("b");
+        Function eq = EQUALS(a, b);
+        assertThat(eq.relinkTo(e).relinkTo(f)).isEqualTo(eq);
+        assertThat(eq).isEqualTo(eq.relinkTo(e).relinkTo(f));
     }
 
 }

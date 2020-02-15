@@ -1,5 +1,8 @@
 package org.kmsf.phenix.database;
 
+import org.kmsf.phenix.function.Functions;
+import org.kmsf.phenix.function.Operator;
+import org.kmsf.phenix.sql.Mapping;
 import org.kmsf.phenix.sql.PrintResult;
 import org.kmsf.phenix.sql.Scope;
 import org.kmsf.phenix.function.FunctionType;
@@ -15,8 +18,15 @@ public class Join extends View {
     private View target;
     private Function definition;
 
+    private Optional<String> name = Optional.empty();
+
     public Join(View target, Function definition) throws ScopeException {
         this(computeSource(target, definition), target, definition);
+    }
+
+    @Override
+    public DatabaseProperties getDatabaseProperties() {
+        return target.getDatabaseProperties();
     }
 
     private static View computeSource(View target, Function definition) throws ScopeException {
@@ -27,11 +37,43 @@ public class Join extends View {
     }
 
     public Join(View source, View target, Function definition) throws ScopeException {
-        if (!assertSourceAndTargetAreCompatibleWithDefinition(source, target, definition))
-            throw new ScopeException("invalid source/target for this definition "+definition+" but expecting "+new FunctionType(source.getType(), target.getType()));
         this.source = source;
         this.target = target;
-        this.definition = definition;
+        this.definition = definition.relinkTo(source).relinkTo(this);
+        if (!assertSourceAndTargetAreCompatibleWithDefinition(source, target, definition))
+            throw new ScopeException("invalid source/target for this definition "+definition+" but expecting "+new FunctionType(source.getType(), target.getType())+" but was "+ definition.getType());
+    }
+
+    public Join(String name, View source, View target, Function definition) throws ScopeException {
+        this(source, target, definition);
+        this.name = Optional.ofNullable(name);
+    }
+
+    public Join(View source, List<Function> sourceKeys, View target, List<Function>  targetKeys) throws ScopeException {
+        this.source = source;
+        this.target = target;
+        this.definition = Functions.EQUALS(//sourceKeys, targetKeys);
+                  sourceKeys.stream().map(fun -> fun.relinkTo(source)).collect(Collectors.toList())
+                , targetKeys.stream().map(fun -> fun.relinkTo(this)).collect(Collectors.toList()));
+        if (!assertSourceAndTargetAreCompatibleWithDefinition(source, target, definition))
+            throw new ScopeException("invalid source/target for this definition "+definition+" but expecting "+new FunctionType(source.getType(), target.getType())+" but was "+ definition.getType());
+    }
+
+    protected Join(Join copy) {
+        this.source = copy.source;
+        this.target = copy.target;
+        this.definition = copy.definition;
+        this.name = copy.name;
+    }
+
+    @Override
+    public Optional<String> getName() {
+        return name;
+    }
+
+    @Override
+    public Function copy() {
+        return new Join(this);
     }
 
     /**
@@ -44,9 +86,11 @@ public class Join extends View {
 
     private boolean assertSourceAndTargetAreCompatibleWithDefinition(View source, View target, Function definition) throws ScopeException {
         FunctionType definitionSource = definition.getType();
-        return definitionSource.size()>1 && definitionSource.size()<=2
-                && definitionSource.isCompatibleWith(source)
+        if (definitionSource.size()==2)
+            return definitionSource.isCompatibleWith(source)
                 && definitionSource.isCompatibleWith(target);
+        else if (definitionSource.size()==1 && source.isCompatibleWith(target)) return definitionSource.isCompatibleWith(source);
+        else return false;
     }
 
     public Function getDefinition() {
@@ -83,12 +127,12 @@ public class Join extends View {
 
     @Override
     public List<Selector> getSelectors() {
-        return target.getSelectors();
+        return target.getSelectors().stream().map(fun -> (Selector)fun.relinkTo(this)).collect(Collectors.toList());
     }
 
     @Override
     public Optional<Selector> accept(View from, Selector selector) {
-        return target.accept(from, selector);
+        return target.accept(from, selector).map(fun -> (Selector)fun.relinkTo(this));
     }
 
     @Override
@@ -122,7 +166,7 @@ public class Join extends View {
 
     @Override
     public String toString() {
-        return "INNER JOIN " + target + " ON " + definition;
+        return source + " INNER JOIN " + target + " ON " + definition;
     }
 
 }

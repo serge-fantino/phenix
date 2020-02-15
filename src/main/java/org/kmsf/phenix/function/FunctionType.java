@@ -36,10 +36,6 @@ public class FunctionType {
         return values.contains(fun);
     }
 
-    public boolean contains(FunctionType source) {
-        return values.containsAll(source.getValues());
-    }
-
     /**
      * return true if at least one type is compatible with the view
      * @param view
@@ -51,11 +47,6 @@ public class FunctionType {
 
     public FunctionType add(View fun) {
         if (!values.contains(fun)) values.add(fun);
-        return this;
-    }
-
-    public FunctionType add(FunctionType type) {
-        addAll(type.values);
         return this;
     }
 

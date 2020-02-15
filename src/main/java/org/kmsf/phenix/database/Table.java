@@ -16,10 +16,9 @@ import java.util.Optional;
  */
 public class Table extends View {
 
-    // default to false because it is killing for testing
-    private boolean quoteIdentifier = false;
-
     private String name;
+
+    private DatabaseProperties databaseProperties = new DatabaseProperties();
 
     private List<Column> columns = new ArrayList<>();
 
@@ -31,11 +30,11 @@ public class Table extends View {
 
     public Table(String name, boolean quoteIdentifier) {
         this(name);
-        this.quoteIdentifier = quoteIdentifier;
+        this.databaseProperties.setQuoteIdentifier(quoteIdentifier);
     }
 
     protected Table(Table copy) {
-        this.quoteIdentifier = copy.quoteIdentifier;
+        this.databaseProperties = copy.databaseProperties;
         this.name = copy.name;
         this.columns = new ArrayList<>(copy.columns);
         this.primaryKey = copy.primaryKey;
@@ -46,8 +45,9 @@ public class Table extends View {
         return new Table(this);
     }
 
-    public boolean isQuoteIdentifier() {
-        return quoteIdentifier;
+    @Override
+    public DatabaseProperties getDatabaseProperties() {
+        return databaseProperties;
     }
 
     @Override
@@ -82,19 +82,35 @@ public class Table extends View {
     }
 
     /**
-     * Join this View using the Key(withKeys) to the Target view PK
+     * Join this View using thew ithForeignKeys to the Target view PK
      * @param target
-     * @param withKeys
+     * @param withForeignKeys
      * @return
      */
-    public Join join(View target, String ... withKeys) throws ScopeException {
+    public Join join(View target, String ... withForeignKeys) throws ScopeException {
+        return join(target.getName().get(), target, withForeignKeys);
+    }
+
+    public Join join(String name, View target, String ... withForeignKeys) throws ScopeException {
         if (target.getPK().getKeys().isEmpty()) throw new ScopeException(target.toString()+" has no PK defined, cannot create natural join");
-        if (target.getPK().getKeys().size()!=withKeys.length) throw new ScopeException("cannot create natural join, keys size are different: "+this.getPK()+" versus "+withKeys);
+        if (target.getPK().getKeys().size()!=withForeignKeys.length) throw new ScopeException("cannot create natural join, keys size are different: "+target.getPK()+" versus "+withForeignKeys);
         ArrayList<Function> keys = new ArrayList<>();
-        for (String key : withKeys) {
+        for (String key : withForeignKeys) {
             keys.add(column(key));
         }
-        return new Join(this, target, Functions.EQUALS(target.getPK().getKeys(), keys));
+        return new Join(this, keys, target, target.getPK().getKeys());
+    }
+
+    public Join oppositeJoin(View target, String ... withForeignKeys) throws ScopeException {
+        if (this.getPK().getKeys().isEmpty()) throw new ScopeException(this.toString()+" has no PK defined, cannot create natural join");
+        if (this.getPK().getKeys().size()!=withForeignKeys.length) throw new ScopeException("cannot create natural join, keys size are different: "+this.getPK()+" versus "+withForeignKeys);
+        ArrayList<Function> keys = new ArrayList<>();
+        for (String keyName : withForeignKeys) {
+            Optional<Selector> key = target.selector(keyName);
+            if (key.isEmpty()) throw new ScopeException("key "+keyName+" is not defined in "+target+" scope");
+            keys.add(key.get());
+        }
+        return new Join(this, this.getPK().getKeys(), target, keys);
     }
 
     @Override
@@ -169,7 +185,7 @@ public class Table extends View {
     }
 
     public PrintResult print(Scope scope, PrintResult result) {
-        return result.appendIdentifier(name, quoteIdentifier);
+        return result.appendIdentifier(name, databaseProperties.isQuoteIdentifier());
     }
 
     @Override

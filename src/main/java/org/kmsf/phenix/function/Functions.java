@@ -31,12 +31,7 @@ public class Functions {
     }
 
     public static Function IN(Function a, Function b) {
-        return new Operator(_IN, Operator.Position.INFIX_FUNCTION, Function.PRECEDENCE_ORDER_STATEMENT, a, b) {
-            public PrintResult print(Scope scope, PrintResult result) throws ScopeException {
-                result.append(scope, a).space().append(_IN).space().append("(").append(scope, b).append(")");
-                return result;
-            }
-        };
+        return new InOperator(a, b);
     }
 
     public static Function ADD(Function a, Function b) {
@@ -129,6 +124,25 @@ public class Functions {
         @Override
         public PrintResult print(Scope scope, PrintResult result) throws ScopeException {
             return result.append(_COUNT).append("(").append(_DISTINCT).space().append(scope, distinct).append(")");
+        }
+
+    }
+
+    static class InOperator extends Operator {
+
+        public InOperator(Function a, Function b) {
+            super(_IN, Operator.Position.INFIX_FUNCTION, Function.PRECEDENCE_ORDER_STATEMENT, a, b);
+        }
+
+        public PrintResult print(Scope scope, PrintResult result) throws ScopeException {
+            result.append(scope, getArguments().get(0)).space().append(_IN).space().append("(").append(scope, getArguments().get(1)).append(")");
+            return result;
+        }
+
+        @Override
+        public Function copy(List<Function> override) {
+            assert override.size()==2;
+            return new InOperator(override.get(0), override.get(1));
         }
 
     }

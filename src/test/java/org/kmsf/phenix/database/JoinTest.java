@@ -35,17 +35,18 @@ class JoinTest {
         Table b = new Table("b");
         var scope = new Scope(new Select());
         scope = scope.add(a, "a");
-        scope = scope.add(b, "b");
         // when
         Join join = new Join(b, EQUALS(a.column("ID"), b.column("A_ID_FK")));
+        scope = scope.add(join, "b");
         // then
         assertThat(join.getType()).isEqualTo(join.getType());
         assertThat(join.getType()).isEqualTo(new FunctionType(a,join));
         assertThat(join.print(scope, new PrintResult()).toString()).isEqualTo("a.ID=b.A_ID_FK");
+        assertThat(join.getDefinition().getType().getValues()).containsExactly(a, join);
     }
 
     @Test
-    public void should_different_join_with_same_source_and_target_be_differents() throws ScopeException {
+    public void should_different_join_with_same_source_and_target_be_different() throws ScopeException {
         // given
         Table people = new Table("people").PK("ID");
         Table transaction = new Table("transaction").PK("ID");
@@ -61,6 +62,21 @@ class JoinTest {
     }
 
     @Test
+    public void should_join_inherits_from_target() throws ScopeException {
+        // given
+        Table people = new Table("people").PK("ID");
+        Table transaction = new Table("transaction").PK("ID");
+        // when
+        Join buyer = transaction.join(people, "BUYER_ID_FK");
+        Join seller = transaction.join(people, "SELLER_ID_FK");
+        // then
+        assertThat(buyer.inheritsFrom(people)).isTrue();
+        assertThat(people.inheritsFrom(buyer)).isFalse();
+        assertThat(buyer.inheritsFrom(buyer)).isTrue();
+        assertThat(buyer.inheritsFrom(seller)).isFalse();
+    }
+
+    @Test
     public void should_not_inherits_from_different_join() throws ScopeException {
         // given
         Table people = new Table("people").PK("ID");
@@ -70,6 +86,20 @@ class JoinTest {
         Join seller = transaction.join(people, "SELLER_ID_FK");
         // then
         assertThat(buyer.isCompatibleWith(seller)).isFalse();
+    }
+
+    @Test
+    public void should_support_self_join() throws ScopeException {
+        // given
+        Table people = new Table("people").PK("ID");
+        Column peopleName = people.column("name");
+        // when
+        Join manager = people.join("manager", people, "MANAGER_ID_FK");
+        Scope scope = new Scope(people).add(people,"people").add(manager, "manager");
+        // then
+        assertThat(manager.getDefinition().getType().getValues()).containsExactly(people, manager);
+        assertThat(manager.print(scope, new PrintResult()).print())
+                .isEqualTo("people.MANAGER_ID_FK=manager.ID");
     }
 
 }

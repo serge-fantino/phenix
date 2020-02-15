@@ -49,14 +49,18 @@ public class Column extends Selector {
     }
 
     public PrintResult print(Scope scope, PrintResult result) {
+        return print(getView(), scope, result);
+    }
+
+    protected PrintResult print(View view, Scope scope, PrintResult result) {
         try {
             //logger.info("printing "+this+" from "+scope);
-            String alias = scope.resolves(table).getAlias();
-            result.append(alias).append(".").appendIdentifier(name, table.isQuoteIdentifier());
+            String alias = scope.resolves(view).getAlias();
+            result.append(alias).append(".").appendIdentifier(name, view.getDatabaseProperties().isQuoteIdentifier());
         } catch (ScopeException e) {
             result.error(
                     new ScopeException(e.getMessage() + " at position " + result.size() + " while looking for "+this));
-            result.appendIdentifier(name, table.isQuoteIdentifier());
+            result.appendIdentifier(name, view.getDatabaseProperties().isQuoteIdentifier());
         }
         return result;
     }
@@ -67,8 +71,21 @@ public class Column extends Selector {
     }
 
     @Override
+    public Function relinkTo(View target) {
+        if (!target.equals(table) && target.inheritsFrom(table)) {
+            // construct a wrapper that allow overriding the view definition
+            return new RelinkWrapper(target, this);
+        }
+        // else
+        return this;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
+        if (o instanceof Selector) {
+            o = ((Selector)o).unwrapReference();
+        }
         if (o == null || getClass() != o.getClass()) return false;
         Column column = (Column) o;
         return table.equals(column.table) &&
@@ -83,5 +100,86 @@ public class Column extends Selector {
     @Override
     public String toString() {
         return "[Column '" + table.getName().orElse("$") + "'.'" + name + "']";
+    }
+
+    class RelinkWrapper extends Selector {
+
+        private View target;
+        private Column column;
+
+        public RelinkWrapper(View target, Column column) {
+            this.target = target;
+            this.column = column;
+        }
+
+        @Override
+        public Optional<String> getName() {
+            return column.getName();
+        }
+
+        @Override
+        public Optional<String> getSystemName() {
+            return column.getSystemName();
+        }
+
+        @Override
+        public PrintResult print(Scope scope, PrintResult result) throws ScopeException {
+            // override the underlying selector with the from view
+            return column.print(target, scope, result);
+        }
+
+        @Override
+        public FunctionType getType() {
+            return new FunctionType(target);
+        }
+
+        @Override
+        public View getView() {
+            return target;
+        }
+
+        @Override
+        public Optional<Function> asSelectorValue() {
+            return column.asSelectorValue();
+        }
+
+        @Override
+        public Function relinkTo(View target) {
+            //Function relink = column.relinkTo(target);
+            //return relink;
+            //
+            if (target.equals(column.getView())) return column;// unwrap
+            //
+            if (target.inheritsFrom(this.target)) {
+                // construct a wrapper that allow overriding the view definition
+                return new RelinkWrapper(target, column);
+            }
+            //
+            // else
+            return this;
+            //
+        }
+
+        @Override
+        public String toString() {
+            return "[RELINK "+column+"]";
+        }
+
+        @Override
+        public Function unwrapReference() {
+            return column;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj==this) return true;
+            return column.equals(obj);
+        }
+
+        @Override
+        public int hashCode() {
+            return column.hashCode();
+        }
+
     }
 }

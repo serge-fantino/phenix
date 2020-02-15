@@ -65,7 +65,7 @@ class QueryTest {
         Attribute peopleDepartment =
                 people.join("department", tDepartment,
                         EQUALS(tPeople.column("DEP_ID_FK"), tDepartment.column("ID")));
-        Attribute departmentManager = department.attribute("manager", tPeople.join(tDepartment.FK("MANAGER_ID_FK")));
+        Attribute departmentManager = department.join("manager", tPeople, "MANAGER_ID_FK");
         Attribute depName = department.attribute("deptName", tDepartment.column("name"));
         // when
         Query johnDoeDepartment = new Query().from(department).where(EQUALS(departmentManager.apply(peopleName), CONST("JohnDoe")));
@@ -92,18 +92,23 @@ class QueryTest {
         Table tDepartment = new Table("department").PK("ID");
         Entity department = new Entity("department", tDepartment);
         // when
-        Attribute departmentPeoples =
-                department.oppositeJoin("peoples",people,"DEP_ID_FK");
+        Attribute peoplesInDepartment =
+                department.oppositeJoin("peoplesInDepartment",people,"DEP_ID_FK");
         // then
-        assertThat(departmentPeoples.getType().getTail()).isPresent()
+        assertThat(peoplesInDepartment.getType().getTail()).isPresent()
                 .hasValueSatisfying(view -> {
-                    view.equals(departmentPeoples.unwrapReference());
+                    view.equals(peoplesInDepartment.unwrapReference());
                     view.isCompatibleWith(people);
                 });
-        assertEquals("SELECT p.name FROM (SELECT d.* FROM department d) a INNER JOIN people p ON p.DEP_ID_FK=a.ID",
+        assertEquals("SELECT p.name FROM (SELECT d.ID FROM department d) a INNER JOIN people p ON a.ID=p.DEP_ID_FK",
                 new Query()
                         .from(new Query().select(department))
-                        .select(departmentPeoples.apply(peopleName)).print());
+                        .select(peoplesInDepartment)
+                        .select(peopleName).print());
+        assertEquals("SELECT p.name FROM (SELECT d.ID FROM department d) a INNER JOIN people p ON a.ID=p.DEP_ID_FK",
+                new Query()
+                        .from(new Query().select(department))
+                        .select(peoplesInDepartment.apply(peopleName)).print());
     }
 
     @Test
@@ -147,7 +152,7 @@ class QueryTest {
                     .from(people.attribute("invoice_address")).select(country, "seller_country");
         // then
         assertThat(transborder.print())
-                .isEqualTo("SELECT p.name AS seller_name, a.country AS seller_country FROM transaction t INNER JOIN people p ON p.ID=t.SELLER_ID_FK INNER JOIN address a ON a.ID=p.INVOICE_ID_FK");
+                .isEqualTo("SELECT p.name AS seller_name, a.country AS seller_country FROM transaction t INNER JOIN people p ON t.SELLER_ID_FK=p.ID INNER JOIN address a ON p.INVOICE_ID_FK=a.ID");
         // when
         transborder.select(buyer)
                 .select(people.attribute("name"), "buyer_name")
@@ -187,7 +192,8 @@ class QueryTest {
         assertEquals("SELECT o.*, c.*, a.* FROM option o INNER JOIN contract c ON c.ID=o.CONTRACT_ID_FK INNER JOIN asset a ON a.ID=c.ASSET_ID_FK",
                 new Query().select(options).select(options.attribute("contract")).select(contract.attribute("asset")).print());
         assertEquals("SELECT o.*, a.*, c.* FROM option o ,contract c INNER JOIN asset a ON a.ID=c.ASSET_ID_FK WHERE c.ID=o.CONTRACT_ID_FK",
-                new Query().select(options).select(contract.attribute("asset")).select(options.attribute("contract")).print());
+                new Query().select(options).select(contract.attribute("asset"))
+                        .select(options.attribute("contract")).print());
     }
 
 }

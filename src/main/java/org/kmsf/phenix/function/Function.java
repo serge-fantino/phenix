@@ -1,13 +1,16 @@
 package org.kmsf.phenix.function;
 
+import org.kmsf.phenix.database.Column;
 import org.kmsf.phenix.database.ScopeException;
 import org.kmsf.phenix.database.Selector;
+import org.kmsf.phenix.database.View;
 import org.kmsf.phenix.sql.PrintResult;
 import org.kmsf.phenix.sql.Scope;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public abstract class Function {
 
@@ -84,6 +87,15 @@ public abstract class Function {
      */
     public List<Selector> getSelectors() {
         return Collections.emptyList();
+    }
+
+    /**
+     * try to relink the expression to the new target.
+     * @param target
+     * @return
+     */
+    public Function relinkTo(View target) {
+        return this;
     }
 
 }

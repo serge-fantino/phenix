@@ -41,8 +41,20 @@ public class Entity extends View {
     }
 
     @Override
+    public DatabaseProperties getDatabaseProperties() {
+        return view.getDatabaseProperties();
+    }
+
+    @Override
     public List<Selector> getSelectors() {
-        return Collections.unmodifiableList(attributes);
+        ArrayList<Selector> selectors = new ArrayList<>();
+        selectors.addAll(attributes);
+        for (Selector selector : view.getSelectors()) {
+            if (!(selector instanceof Column)) {
+                selectors.add(selector);
+            }
+        }
+        return selectors;
     }
 
     @Override
@@ -83,7 +95,7 @@ public class Entity extends View {
             if (key.isEmpty()) throw new ScopeException("key "+keyName+" is not defined in "+this+" scope");
             keys.add(key.get());
         }
-        return register(new Attribute(this, name, new Join(this, target, Functions.EQUALS(target.getPK().getKeys(), keys))));
+        return register(new Attribute(this, name, new Join(this, keys, target, target.getPK().getKeys())));
     }
 
     /**
@@ -101,7 +113,7 @@ public class Entity extends View {
             if (key.isEmpty()) throw new ScopeException("key "+keyName+" is not defined in "+target+" scope");
             keys.add(key.get());
         }
-        return register(new Attribute(this, name, new Join(this, target, Functions.EQUALS(this.getPK().getKeys(), keys))));
+        return register(new Attribute(this, name, new Join(this, this.getPK().getKeys(), target, keys)));
     }
 
     public Attribute join(View target, String ... withKeys) throws ScopeException {

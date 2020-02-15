@@ -41,7 +41,7 @@ class AttributeTest {
         assertThat(department.getSelectors()).containsExactly(depName);
         assertThat(peopleDepartment.getSelectors()).containsExactly(depName);
         assertThat(new Query().select(people).select(peopleDepartment).print())
-                .isEqualTo("SELECT p.name AS peopleName, d.name FROM people p INNER JOIN department d ON d.ID=p.DEP_ID_FK");
+                .isEqualTo("SELECT p.name AS peopleName, d.name FROM people p INNER JOIN department d ON p.DEP_ID_FK=d.ID");
         // new Select(tPeople).from(join).print().toString()
     }
 
@@ -55,7 +55,7 @@ class AttributeTest {
         Entity department = new Entity("department", tDepartment);
         Attribute depName = department.attribute("name");
         // when
-        Join join = tDepartment.join(tPeople.FK("DEP_ID_FK"));
+        Join join = tDepartment.join(tPeople, "DEP_ID_FK");
         Attribute peopleDepartment =
                 people.join("department", tDepartment, join);
         // then

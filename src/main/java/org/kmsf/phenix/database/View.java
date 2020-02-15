@@ -10,9 +10,7 @@ public abstract class View extends Function {
         return first.equals(second) || first.inheritsFrom(second) || second.inheritsFrom(first);
     }
 
-    public final boolean isCompatibleWith(View other) {
-        return checkIfViewAreCompatible(this, other);
-    }
+    public abstract DatabaseProperties getDatabaseProperties();
 
     /**
      * create a selector based on that name from this View scope if possible
@@ -40,6 +38,14 @@ public abstract class View extends Function {
      * @return
      */
     public abstract boolean inheritsFrom(View parent);
+
+    public final boolean inheritsFromOrEquals(View view) {
+        return this.equals(view) || this.inheritsFrom(view);
+    }
+
+    public final boolean isCompatibleWith(View other) {
+        return checkIfViewAreCompatible(this, other);
+    }
 
     /**
      * return the composite PrimaryKey if defined for this view

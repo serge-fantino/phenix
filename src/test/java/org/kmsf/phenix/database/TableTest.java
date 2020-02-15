@@ -131,7 +131,7 @@ class TableTest {
         Table tPeople = new Table("people");
         Table tDepartment = new Table("department");
         // when
-        Throwable throwable = catchThrowable(() -> tDepartment.join(tPeople.FK("DEP_ID_FK")));
+        Throwable throwable = catchThrowable(() -> tDepartment.join(tPeople, "DEP_ID_FK"));
         // then
         assertThat(throwable).isInstanceOf(ScopeException.class).hasMessageContaining("has no PK defined");
     }

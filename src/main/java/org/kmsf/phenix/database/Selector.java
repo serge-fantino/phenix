@@ -1,6 +1,8 @@
 package org.kmsf.phenix.database;
 
 import org.kmsf.phenix.function.Function;
+import org.kmsf.phenix.sql.PrintResult;
+import org.kmsf.phenix.sql.Scope;
 
 import java.util.Objects;
 import java.util.Optional;

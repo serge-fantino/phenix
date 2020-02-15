@@ -50,6 +50,19 @@ public class Scope implements Iterable<Mapping> {
         return scope;
     }
 
+    /**
+     * find a mapping that is compatible with the view
+     * @param view
+     * @return
+     * @throws ScopeException
+     */
+    public Mapping findCompatibleMapping(View view) throws ScopeException {
+        for (Mapping mapping : this) {
+            if (mapping.getReference().isCompatibleWith(view)) return mapping;
+        }
+        throw new ScopeException("cannot resolve "+view+" in "+this);
+    }
+
     public Mapping resolves(View view) throws ScopeException {
         var mapping = safeResolves(view);
         if (mapping.isEmpty())
@@ -63,7 +76,8 @@ public class Scope implements Iterable<Mapping> {
 
     protected Optional<Mapping> safeResolves(View view) {
         for (var mapping : this) {
-            if (mapping.getReference().isCompatibleWith(view)) {
+            if (mapping.getReference().equals(view)) {
+            //if (mapping.getReference().isCompatibleWith(view)) {
                 logger.log(Level.INFO, "getting alias for "+view+" as '"+mapping.getAlias()+"' from "+mapping.getReference()+" in scope level "+deepth);
                 return Optional.of(mapping);
             }

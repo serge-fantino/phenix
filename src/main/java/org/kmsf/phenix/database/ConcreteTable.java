@@ -7,6 +7,7 @@ import org.kmsf.phenix.sql.Scope;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * A Concrete Table is a Table with a well define selectors that cannot be modified
@@ -30,6 +31,11 @@ public class ConcreteTable extends View {
     }
 
     @Override
+    public DatabaseProperties getDatabaseProperties() {
+        return model.getDatabaseProperties();
+    }
+
+    @Override
     public Optional<Selector> selector(String name) {
         try {
             return Optional.ofNullable(column(name));
@@ -47,7 +53,7 @@ public class ConcreteTable extends View {
 
     @Override
     public List<Selector> getSelectors() {
-        return model.getSelectors();
+        return model.getSelectors().stream().map(fun -> (Selector)fun.relinkTo(this)).collect(Collectors.toList());
     }
 
     @Override

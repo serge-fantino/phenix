@@ -1,7 +1,10 @@
 package org.kmsf.phenix.function;
 
+import org.kmsf.phenix.database.View;
 import org.kmsf.phenix.sql.PrintResult;
 import org.kmsf.phenix.sql.Scope;
+
+import java.util.Optional;
 
 public class ConstFunction<T> extends Function {
 
@@ -33,5 +36,10 @@ public class ConstFunction<T> extends Function {
     @Override
     public int hashCode() {
         return value.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "[CONST "+value+"]";
     }
 }

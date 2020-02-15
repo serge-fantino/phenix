@@ -1,5 +1,6 @@
 package org.kmsf.phenix.sql;
 
+import org.kmsf.phenix.database.Join;
 import org.kmsf.phenix.database.ScopeException;
 import org.kmsf.phenix.database.Select;
 import org.kmsf.phenix.function.Function;
@@ -7,16 +8,16 @@ import org.kmsf.phenix.database.View;
 
 public class JoinClause extends FromClause {
 
-    private Function join;
+    private Join join;
 
-    public JoinClause(Scope scope, View view, Function join, String alias) {
-        super(scope, view, alias);
+    public JoinClause(Scope scope, Join join, String alias) {
+        super(scope, join, alias);
         this.join = join;
     }
 
     public PrintResult print(PrintResult result) throws ScopeException {
         result.append(Select.INNERJOIN).space();
-        super.print(result).space().append(Select.ON).space();
+        super.print(getScope(), join.getTarget(), getAlias(), result).space().append(Select.ON).space();
         join.print(getScope(), result);
         return result;
     }

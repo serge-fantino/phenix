@@ -91,6 +91,11 @@ public class Attribute extends Selector {
     }
 
     @Override
+    public Function relinkTo(View target) {
+        throw new RuntimeException("NYI");
+    }
+
+    @Override
     public Function unwrapReference() {
         return definition;
     }

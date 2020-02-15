@@ -118,6 +118,12 @@ public class Operator extends Function {
     }
 
     @Override
+    public Function relinkTo(View target) {
+        List<Function> override = getArguments().stream().map(fun -> fun.relinkTo(target)).collect(Collectors.toList());
+        return copy(override);
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

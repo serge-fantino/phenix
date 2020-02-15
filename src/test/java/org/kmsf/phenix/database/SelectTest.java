@@ -3,6 +3,7 @@ package org.kmsf.phenix.database;
 import org.junit.jupiter.api.Test;
 import org.kmsf.phenix.function.Function;
 import org.kmsf.phenix.function.FunctionType;
+import org.kmsf.phenix.sql.Mapping;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,11 +50,13 @@ class SelectTest {
     void should_select_all_by_default_with_join() throws ScopeException {
         // given
         Table parent = new Table("parent").PK("id");
-        Table children = new Table("children");
+        Table child = new Table("child");
         // when
-        Select select = new Select().from(parent).from(parent.join(children.FK("parent_id")).opposite());
+        Join children = parent.oppositeJoin(child, "parent_id");
+        Select select = new Select().from(parent).from(children);
         // then
-        assertThat(select.print()).isEqualTo("SELECT p.id, c.parent_id FROM parent p INNER JOIN children c ON p.id=c.parent_id");
+        assertThat(children.getDefinition().getType().getValues()).containsExactly(parent, children);
+        assertThat(select.print()).isEqualTo("SELECT p.id, c.parent_id FROM parent p INNER JOIN child c ON p.id=c.parent_id");
     }
 
     @Test
@@ -98,9 +101,9 @@ class SelectTest {
         Column a = first.column("a");
         Table second = new Table("second").PK("ID");
         Column b = second.column("b");
-        Join ab = first.join(second.FK("FIRST_ID_FK"));
+        Join seconds = first.oppositeJoin(second, "FIRST_ID_FK");
         // when
-        Select select = new Select().from(first).select(a).from(ab.opposite()).select(b);
+        Select select = new Select().from(first).select(a).from(seconds).select(b);
         // then
         assertThat(select.print()).isEqualTo("SELECT f.a, s.b FROM first f INNER JOIN second s ON f.ID=s.FIRST_ID_FK");
     }
@@ -112,9 +115,9 @@ class SelectTest {
         Column a = first.column("a");
         Table second = new Table("second").PK("ID");
         Column b = second.column("b");
-        Join ab = first.join(second.FK("FIRST_ID_FK"));
+        Join seconds = first.oppositeJoin(second, "FIRST_ID_FK");
         // when
-        Select select = new Select().from(first).select(a).from((View)ab.opposite()).select(b);
+        Select select = new Select().from(first).select(a).from(seconds).select(b);
         // then
         assertThat(select.print()).isEqualTo("SELECT f.a, s.b FROM first f INNER JOIN second s ON f.ID=s.FIRST_ID_FK");
     }
@@ -126,13 +129,13 @@ class SelectTest {
         Column name = people.column("name");
         Table department = new Table("department").PK("ID");
         Column depName = department.column("name");
-        Join departmentManager = people.join(department.FK("MANAGER_ID_FK"));
+        Join departmentManager = people.oppositeJoin(department, "MANAGER_ID_FK");
         // when
         Select select = new Select().from(people).select(name);
-        Throwable thrown = catchThrowable(()->select.from(departmentManager));
+        Throwable thrown = catchThrowable(()->select.from(departmentManager.opposite()));
         // then
         assertThat(thrown).isInstanceOf(ScopeException.class);
-        assertDoesNotThrow(() ->select.from(departmentManager.opposite()));
+        assertDoesNotThrow(() ->select.from(departmentManager));
         assertThat(select.select(depName, "isManaging").print())
                 .isEqualTo("SELECT p.name, d.name AS isManaging FROM people p INNER JOIN department d ON p.ID=d.MANAGER_ID_FK");
     }
@@ -152,11 +155,25 @@ class SelectTest {
         Select crossBorderTransaction = new Select()
                 .from(transaction)
                 .from(buyer).select(name, "buyerName")
-                    .from(peopleAddress).select(country, "buyerCountry")
-                .from(seller).select(name, "sellerName")
+                    .from(peopleAddress).select(country, "buyerCountry");
+        Join addressRef = (Join)crossBorderTransaction.getScope().findCompatibleMapping(address).getReference();
+        // then
+        assertThat(addressRef).isInstanceOf(Join.class);
+        assertThat((addressRef).getDefinition()).isEqualTo(peopleAddress.getDefinition());
+        assertThat(peopleAddress.getDefinition()).isEqualTo((addressRef).getDefinition());
+        assertThat((addressRef).getTarget()).matches(view -> view.isCompatibleWith(peopleAddress));
+        assertThat(addressRef.inheritsFrom(peopleAddress)).isTrue();
+        assertThat(addressRef.getDefinition().getType().getValues()).containsExactly(buyer, addressRef);
+        assertThat(addressRef.equals(peopleAddress)).isFalse();
+        assertThat(crossBorderTransaction.getScope().canResolves(addressRef)).isTrue();
+        assertThat(crossBorderTransaction.print())
+                .isEqualTo("SELECT p.name AS buyerName, a.country AS buyerCountry FROM transaction t INNER JOIN people p ON t.BUYER_ID_FK=p.ID INNER JOIN address a ON p.ADDRESS_ID_FK=a.ID");
+        // when
+        crossBorderTransaction.from(seller).select(name, "sellerName")
                     .from(peopleAddress).select(country, "sellerCountry");
         // then
-        assertThat(crossBorderTransaction.print()).isEqualTo("SELECT p.name AS buyerName, a.country AS buyerCountry, p1.name AS sellerName, a1.country AS sellerCountry FROM transaction t INNER JOIN people p ON p.ID=t.BUYER_ID_FK INNER JOIN address a ON a.ID=p.ADDRESS_ID_FK INNER JOIN people p1 ON p1.ID=t.SELLER_ID_FK INNER JOIN address a1 ON a1.ID=p1.ADDRESS_ID_FK");
+        assertThat(crossBorderTransaction.print())
+                .isEqualTo("SELECT p.name AS buyerName, a.country AS buyerCountry, p1.name AS sellerName, a1.country AS sellerCountry FROM transaction t INNER JOIN people p ON t.BUYER_ID_FK=p.ID INNER JOIN address a ON p.ADDRESS_ID_FK=a.ID INNER JOIN people p1 ON t.SELLER_ID_FK=p1.ID INNER JOIN address a1 ON p1.ADDRESS_ID_FK=a1.ID");
     }
 
     @Test
@@ -193,11 +210,11 @@ class SelectTest {
         // then
         assertEquals("p", select.getScope().resolves(buyer).getAlias());
         select.select(people.column("name"),"buyer_name");
-        assertEquals("p", select.getScope().resolves(people).getAlias());
+        assertEquals("p", select.getScope().findCompatibleMapping(people).getAlias());
         // when select seller
         select.from(seller);
         // then
-        assertEquals("p1", select.getScope().resolves(people).getAlias());
+        assertEquals("p1", select.getScope().findCompatibleMapping(people).getAlias());
         select.select(people.column("name"),"seller_name");
         assertEquals("p1", select.getScope().resolves(seller).getAlias());
         // and then
@@ -315,7 +332,12 @@ class SelectTest {
         Join peopleDepartment = department.join(people.FK("DEPARTMENT_ID_FK"));
         Column peopleName = people.column("name");
         Column deptName = department.column("name");
-        Select select = new Select().from(people).from(peopleDepartment).select(COUNT(people)).from(departmentManager).select(peopleName);
+        Select select = new Select()
+                .from(people)
+                .from(peopleDepartment)
+                .select(COUNT(people))
+                .from(departmentManager)
+                .select(peopleName);
         // then
         Select copy = new Select(select);
         // then
@@ -367,6 +389,9 @@ class SelectTest {
         Column city = people.column("city");
         Column revenue = people.column("revenue");
         // when
+        assertThat(GREATER(SUM(revenue),
+                MULTIPLY(CONST(3), new Select().from(people).select(SUM(revenue)))).getType().getValues())
+                .containsExactly(people);
         Select peopleInRichCity = new Select(people)
                 .where(IN(city,
                         new Select().from(people).select(city).groupBy(city).having(GREATER(SUM(revenue),
@@ -418,6 +443,40 @@ class SelectTest {
         assertThat(squareRevenue.unwrapReference()).isEqualTo(square);
         assertThat(squareRevenue.unwrapReference()).isNotEqualTo(twice);
         assertThat(something.getSelectors()).containsExactly(squareRevenue);
+    }
+
+    @Test
+    void should_join_using_where_clause() throws ScopeException {
+        // given
+        Table people = new Table("people").PK("ID");
+        Column peopleName = people.column("name");
+        Table department = new Table("department").PK("ID");
+        Column departmentName = department.column("name");
+        Join peopleDepartment = people.join(department, "DEPARTMENT_ID_FK");
+        Join peopleFromDepartment = department.oppositeJoin(people, "DEPARTMENT_ID_FK");
+        // when
+        Select test = new Select().from(people).select(peopleName).from(department).select(departmentName);
+        // then
+        assertThat(test.tryHarderToAccept(test, peopleDepartment).get().getType().getValues()).containsExactly(people, peopleDepartment);
+        assertThat(test.where(peopleDepartment).print())
+                .isEqualTo("SELECT p.name, d.name AS name1 FROM people p, department d WHERE p.DEPARTMENT_ID_FK=d.ID");
+        // list every possible pairs by department
+        assertThat(test.from(peopleFromDepartment).select(peopleName).print())
+                .isEqualTo("SELECT p.name, d.name AS name1, p1.name AS name2 FROM people p, department d INNER JOIN people p1 ON d.ID=p1.DEPARTMENT_ID_FK WHERE p.DEPARTMENT_ID_FK=d.ID");
+    }
+
+    @Test
+    void should_allow_self_join() throws ScopeException {
+        // given
+        Table people = new Table("people").PK("ID");
+        Column peopleName = people.column("name");
+        // when
+        Join manager = people.join("manager", people, "MANAGER_ID_FK");
+        // then
+        assertThat(new Select().from(people).select(peopleName, "employee").from(manager)
+                .select(peopleName,"manager")
+                .print())
+                .isEqualTo("SELECT p.name AS employee, p1.name AS manager FROM people p INNER JOIN people p1 ON p.MANAGER_ID_FK=p1.ID");
     }
 
 }

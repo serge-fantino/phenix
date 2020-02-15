@@ -30,6 +30,11 @@ public class Query extends Statement {
     }
 
     @Override
+    public DatabaseProperties getDatabaseProperties() {
+        return select.getDatabaseProperties();
+    }
+
+    @Override
     public List<Selector> getSelectors() {
         return select.getSelectors();
     }
@@ -56,6 +61,11 @@ public class Query extends Statement {
         return this;
     }
 
+    @Override
+    public Optional<Function> accept(Function expr) {
+        return select.accept(expr);
+    }
+
     public Query select(Entity entity) throws ScopeException {
         select.addToScopeIfNeeded(entity);
         //select.select(Functions.STAR(entity));
@@ -78,7 +88,7 @@ public class Query extends Statement {
         return this;
     }
 
-    public Query where(Function predicat) {
+    public Query where(Function predicat) throws ScopeException {
         select.addToScopeIfNeeded(predicat);
         select.where(predicat);
         return this;

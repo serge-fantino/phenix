@@ -122,6 +122,11 @@ public class SelectClause implements Printer {
             }
 
             @Override
+            public Function relinkTo(View target) {
+                throw new RuntimeException("NYI");
+            }
+
+            @Override
             public boolean equals(Object obj) {
                 if (obj==this) return true;
                 if (obj instanceof Selector) {

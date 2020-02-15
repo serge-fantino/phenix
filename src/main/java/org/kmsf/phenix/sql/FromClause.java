@@ -10,6 +10,14 @@ public class FromClause implements Printer {
     private View view;
     private String alias;
 
+    public static PrintResult print(Scope scope, View view, String alias, PrintResult result) throws ScopeException {
+        if (view.getPrecedence() < Function.PRECEDENCE_ORDER_VIEW) result.append("(");
+        view.print(scope, result);
+        if (view.getPrecedence() < Function.PRECEDENCE_ORDER_VIEW) result.append(")");
+        result.space().append(alias);
+        return result;
+    }
+
     public FromClause(Scope scope, View view, String alias) {
         this.scope = scope;
         this.view = view;
@@ -20,8 +28,12 @@ public class FromClause implements Printer {
         return scope;
     }
 
-    public View getValue() {
+    public View getView() {
         return view;
+    }
+
+    public String getAlias() {
+        return alias;
     }
 
     public PrintResult print(PrintResult result) throws ScopeException {

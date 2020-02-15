@@ -71,7 +71,7 @@ class EntityTest {
         Entity peopleName = new Entity("peopleName", select);
         // then
         assertThat(new Query().select(peopleName).print())
-                .isEqualTo("SELECT a.first_name, a.last_name FROM (SELECT p.first_name, p.last_name FROM people p) a");
+                .isEqualTo("SELECT p.first_name, p.last_name FROM (SELECT p.first_name, p.last_name FROM people p) p");
     }
 
     @Test
@@ -132,7 +132,7 @@ class EntityTest {
         assertThat(new Select(headCount).inheritsFrom(headCount)).isTrue();
         assertThat(new Query(headCount).isCompatibleWith(headCount)).isTrue();
         assertThat(new Query().select(headCount).print())
-                .isEqualTo("SELECT a.x, a.ID FROM (SELECT COUNT(DISTINCT p.ID) AS x, d.ID FROM department d INNER JOIN people p ON p.DEPT_ID_FK=d.ID GROUP BY d.ID) a");
+                .isEqualTo("SELECT h.x, h.ID FROM (SELECT COUNT(DISTINCT p.ID) AS x, d.ID FROM department d INNER JOIN people p ON p.DEPT_ID_FK=d.ID GROUP BY d.ID) h");
         // when
         Attribute peopleDepartment = people.join("peopleDepartment", department, EQUALS(tPeople.column("DEPT_ID_FK"), departmentPK));
         // then
@@ -159,6 +159,19 @@ class EntityTest {
         // then
         assertThat(people.isCompatibleWith(tPeople)).isTrue();
         assertThat(tPeople.isCompatibleWith(people)).isTrue();
+    }
+
+    @Test
+    void should_entity_compatible_with_entity() {
+        // given
+        Table tPeople = new Table("people");
+        // when
+        Entity people = new Entity("people", tPeople);
+        Entity people_bis = new Entity("people_bis", tPeople);
+        // then
+        assertThat(people.equals(people_bis)).isFalse();
+        assertThat(people.inheritsFrom(people_bis)).isFalse();
+        assertThat(people.isCompatibleWith(people_bis)).isFalse();
     }
 
     @Test
@@ -240,7 +253,7 @@ class EntityTest {
         Attribute peopleDepartment = people.join(department, "department_id_fk");
         // then
         assertThat(new Query().select(people).select(peopleDepartment).print())
-                .isEqualTo("SELECT p.firstName, p.lastName, d.city FROM people p INNER JOIN department d ON d.ID=p.department_id_fk");
+                .isEqualTo("SELECT p.firstName, p.lastName, d.city FROM people p INNER JOIN department d ON p.department_id_fk=d.ID");
     }
 
 }
