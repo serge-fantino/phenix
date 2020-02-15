@@ -4,11 +4,11 @@ import org.junit.jupiter.api.Test;
 import org.kmsf.phenix.database.Column;
 import org.kmsf.phenix.database.ScopeException;
 import org.kmsf.phenix.database.Table;
-import org.kmsf.phenix.function.FunctionType;
+import org.kmsf.phenix.algebra.FunctionType;
 
 import java.util.Collections;
 
-import static org.kmsf.phenix.function.Functions.*;
+import static org.kmsf.phenix.algebra.Functions.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 

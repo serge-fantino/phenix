@@ -2,8 +2,8 @@ package org.kmsf.phenix.database;
 
 import org.kmsf.phenix.sql.PrintResult;
 import org.kmsf.phenix.sql.Scope;
-import org.kmsf.phenix.function.Function;
-import org.kmsf.phenix.function.FunctionType;
+import org.kmsf.phenix.algebra.Expression;
+import org.kmsf.phenix.algebra.FunctionType;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * A Table is a View that binds to an actual database Table
+ * A Table is a {@link View} that binds to an actual {@link Database database} Table
  */
 public class Table extends View {
 
@@ -107,7 +107,7 @@ public class Table extends View {
         return this;
     }
 
-    public List<Function> getPK() {
+    public List<Expression> getPK() {
         if (primaryKey.isPresent())
             return Collections.unmodifiableList(primaryKey.get());
         return Collections.emptyList();
@@ -139,12 +139,12 @@ public class Table extends View {
      * @return
      */
     @Override
-    public Function redux() {
+    public Expression redux() {
         return this;
     }
 
     @Override
-    public boolean identity(Function fun) {
+    public boolean identity(Expression fun) {
         if (fun instanceof Table) {
             Table t = (Table) fun;
             return t.name.equals(this.name);

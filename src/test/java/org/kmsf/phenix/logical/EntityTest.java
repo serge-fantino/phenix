@@ -2,13 +2,11 @@ package org.kmsf.phenix.logical;
 
 import org.junit.jupiter.api.Test;
 import org.kmsf.phenix.database.*;
-import org.kmsf.phenix.function.ConstFunction;
-import org.kmsf.phenix.function.Function;
-import org.kmsf.phenix.function.FunctionType;
+import org.kmsf.phenix.algebra.FunctionType;
 
 import java.util.Arrays;
 
-import static org.kmsf.phenix.function.Functions.*;
+import static org.kmsf.phenix.algebra.Functions.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 

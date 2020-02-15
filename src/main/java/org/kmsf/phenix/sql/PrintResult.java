@@ -1,7 +1,7 @@
 package org.kmsf.phenix.sql;
 
 import org.kmsf.phenix.database.ScopeException;
-import org.kmsf.phenix.function.Function;
+import org.kmsf.phenix.algebra.Expression;
 
 import java.util.ArrayList;
 
@@ -36,11 +36,11 @@ public class PrintResult {
         return this;
     }
 
-    public PrintResult append(Scope scope, Function expr) throws ScopeException {
+    public PrintResult append(Scope scope, Expression expr) throws ScopeException {
         return expr.print(scope, this);
     }
 
-    public PrintResult append(Scope scope, Function expr, boolean enclose) throws ScopeException {
+    public PrintResult append(Scope scope, Expression expr, boolean enclose) throws ScopeException {
         if (enclose) append("(");
         expr.print(scope, this);
         if (enclose) append(")");

@@ -1,10 +1,10 @@
 package org.kmsf.phenix.database;
 
-import org.kmsf.phenix.function.Leaf;
+import org.kmsf.phenix.algebra.Leaf;
 import org.kmsf.phenix.sql.*;
-import org.kmsf.phenix.function.FunctionType;
-import org.kmsf.phenix.function.Function;
-import org.kmsf.phenix.function.Functions;
+import org.kmsf.phenix.algebra.FunctionType;
+import org.kmsf.phenix.algebra.Expression;
+import org.kmsf.phenix.algebra.Functions;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -25,8 +25,8 @@ public class Select extends Statement implements Leaf {
 
     private List<FromClause> from = new ArrayList<>();
     private List<SelectClause> selectors = new ArrayList<>();
-    private List<Function> where = new ArrayList<>();
-    private List<Function> having = new ArrayList<>();
+    private List<Expression> where = new ArrayList<>();
+    private List<Expression> having = new ArrayList<>();
     private List<GroupByClause> groupBy = new ArrayList<>();
 
     private Character alias = 'a';
@@ -64,12 +64,12 @@ public class Select extends Statement implements Leaf {
         return this;
     }
 
-    public Select select(Function expr) {
+    public Select select(Expression expr) {
         selectors.add(new SelectClause(this, scope, expr));
         return this;
     }
 
-    public Select select(Function expr, String alias) {
+    public Select select(Expression expr, String alias) {
         selectors.add(new SelectClause(this, scope, expr, getAlias(alias)));
         return this;
     }
@@ -80,7 +80,7 @@ public class Select extends Statement implements Leaf {
     }
 
     @Override
-    public List<Function> getPK() {
+    public List<Expression> getPK() {
         if (!groupBy.isEmpty()) {
             // return the groupBy definition as the new PK
             return groupBy.stream()
@@ -139,7 +139,7 @@ public class Select extends Statement implements Leaf {
         scope.add(view, alias);
         // check view sources
         Optional<FunctionType> source = Optional.ofNullable(view.getSource());
-        if (source.isPresent()) for (Function value : source.get().getValues()) {
+        if (source.isPresent()) for (Expression value : source.get().getValues()) {
             if (!scope.contains(value))
                 scope.add(value, alias);
         }
@@ -152,7 +152,7 @@ public class Select extends Statement implements Leaf {
         return this;
     }
 
-    public Select from(Function expr) {
+    public Select from(Expression expr) {
         if (expr instanceof View) {
             return from((View) expr);
         } else if (expr instanceof Join) {
@@ -162,12 +162,12 @@ public class Select extends Statement implements Leaf {
         }
     }
 
-    private JoinClause joinClause(View view, Function join, String alias) {
+    private JoinClause joinClause(View view, Expression join, String alias) {
         addToScope(view, alias);
         return new JoinClause(scope, view, join, alias);
     }
 
-    public Select innerJoin(Table table, Function join) {
+    public Select innerJoin(Table table, Expression join) {
         from.add(joinClause(table, join, getAlias(table.getName())));
         return this;
     }
@@ -177,23 +177,23 @@ public class Select extends Statement implements Leaf {
         return this;
     }
 
-    public Select where(Function predicate) {
+    public Select where(Expression predicate) {
         where.add(predicate);
         return this;
     }
 
-    public Select groupBy(Function arg) {
+    public Select groupBy(Expression arg) {
         groupBy.add(new GroupByClause(scope, arg));
         return this;
     }
 
-    public Select groupBy(List<? extends Function> args) {
-        for (Function arg : args)
+    public Select groupBy(List<? extends Expression> args) {
+        for (Expression arg : args)
             groupBy.add(new GroupByClause(scope, arg));
         return this;
     }
 
-    public Select having(Function predicate) {
+    public Select having(Expression predicate) {
         having.add(predicate);
         return this;
     }
@@ -261,12 +261,12 @@ public class Select extends Statement implements Leaf {
     }
 
     @Override
-    public Function redux() {
+    public Expression redux() {
         return this;
     }
 
     @Override
-    public boolean identity(Function fun) {
+    public boolean identity(Expression fun) {
         if (fun instanceof Select) {
             return getSource().equals(fun.getSource());
         }

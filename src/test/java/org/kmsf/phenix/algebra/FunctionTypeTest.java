@@ -1,4 +1,4 @@
-package org.kmsf.phenix.function;
+package org.kmsf.phenix.algebra;
 
 import org.junit.jupiter.api.Test;
 
@@ -8,7 +8,7 @@ class FunctionTypeTest {
 
     @Test
     void add() {
-        assertEquals(new FunctionType(new ConstFunction<>("A"), new ConstFunction<>("B")), new FunctionType((new ConstFunction<>("A"))).add(new ConstFunction<>("B")));
+        assertEquals(new FunctionType(new ConstExpression<>("A"), new ConstExpression<>("B")), new FunctionType((new ConstExpression<>("A"))).add(new ConstExpression<>("B")));
     }
 
     @Test

@@ -2,7 +2,7 @@ package org.kmsf.phenix.sql;
 
 import org.kmsf.phenix.database.ScopeException;
 import org.kmsf.phenix.database.View;
-import org.kmsf.phenix.function.Function;
+import org.kmsf.phenix.algebra.PrecedenceOrder;
 
 public class FromClause implements Printer {
 
@@ -25,9 +25,9 @@ public class FromClause implements Printer {
     }
 
     public PrintResult print(PrintResult result) throws ScopeException {
-        if (view.getPrecedence() < Function.PRECEDENCE_ORDER_VIEW) result.append("(");
+        if (view.getPrecedence() < PrecedenceOrder.PRECEDENCE_ORDER_VIEW) result.append("(");
         view.print(scope, result);
-        if (view.getPrecedence() < Function.PRECEDENCE_ORDER_VIEW) result.append(")");
+        if (view.getPrecedence() < PrecedenceOrder.PRECEDENCE_ORDER_VIEW) result.append(")");
         result.space().append(alias);
         return result;
     }

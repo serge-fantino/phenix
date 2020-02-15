@@ -3,9 +3,9 @@ package org.kmsf.phenix.logical;
 import org.kmsf.phenix.database.*;
 import org.kmsf.phenix.sql.PrintResult;
 import org.kmsf.phenix.sql.Scope;
-import org.kmsf.phenix.function.Function;
-import org.kmsf.phenix.function.FunctionType;
-import org.kmsf.phenix.function.Functions;
+import org.kmsf.phenix.algebra.Expression;
+import org.kmsf.phenix.algebra.FunctionType;
+import org.kmsf.phenix.algebra.Functions;
 
 import java.util.List;
 
@@ -31,11 +31,11 @@ public class Query extends Statement {
     }
 
     @Override
-    public List<Function> getPK() {
+    public List<Expression> getPK() {
         return select.getPK();
     }
 
-    public Query select(Function expr) {
+    public Query select(Expression expr) {
         addToScopeIfNeeded(expr);
         if (expr.getName().isPresent())
             select.select(expr, expr.getName().get());
@@ -50,7 +50,7 @@ public class Query extends Statement {
         return this;
     }
 
-    protected void addToScopeIfNeeded(Function fun) {
+    protected void addToScopeIfNeeded(Expression fun) {
         FunctionType source = fun.getSource();
         source.getValues().forEach(
                 function -> {
@@ -72,12 +72,12 @@ public class Query extends Statement {
         return this;
     }
 
-    public Query where(Function predicat) {
+    public Query where(Expression predicat) {
         select.where(predicat);
         return this;
     }
 
-    public Query groupBy(Function expr) {
+    public Query groupBy(Expression expr) {
         select(expr);
         select.groupBy(expr);
         return this;
@@ -109,7 +109,7 @@ public class Query extends Statement {
     }
 
     @Override
-    public Function redux() {
+    public Expression redux() {
         return select.redux();
     }
 

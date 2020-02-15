@@ -1,14 +1,14 @@
 package org.kmsf.phenix.sql;
 
-import org.kmsf.phenix.function.Function;
+import org.kmsf.phenix.algebra.Expression;
 
 public class Mapping {
 
     private Scope scope;
-    private Function ref;
+    private Expression ref;
     private String alias;
 
-    public Mapping(Scope scope, Function ref, String alias) {
+    public Mapping(Scope scope, Expression ref, String alias) {
         this.scope = scope;
         this.ref = ref;
         this.alias = alias;

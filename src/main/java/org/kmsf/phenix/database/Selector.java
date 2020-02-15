@@ -1,13 +1,15 @@
 package org.kmsf.phenix.database;
 
-import org.kmsf.phenix.function.Function;
+import org.kmsf.phenix.algebra.Expression;
 
 import java.util.Objects;
 
 /**
- * A Selector is a Function that we can project value from a View that contains this selector.
+ * A Selector is a {@link Expression} that we can project value from.
+ *
+ * A Selector is contained by a {@link View}.
  */
-public abstract class Selector extends Function {
+public abstract class Selector extends Expression {
 
 
     /**

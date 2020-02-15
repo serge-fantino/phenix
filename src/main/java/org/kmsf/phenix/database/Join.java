@@ -2,20 +2,20 @@ package org.kmsf.phenix.database;
 
 import org.kmsf.phenix.sql.PrintResult;
 import org.kmsf.phenix.sql.Scope;
-import org.kmsf.phenix.function.FunctionType;
-import org.kmsf.phenix.function.Function;
+import org.kmsf.phenix.algebra.FunctionType;
+import org.kmsf.phenix.algebra.Expression;
 
-public class Join extends Function {
+public class Join extends Expression {
 
     private View target;
-    private Function definition;
+    private Expression definition;
 
-    public Join(View target, Function definition) {
+    public Join(View target, Expression definition) {
         this.target = target;
         this.definition = definition;
     }
 
-    public Function getDefinition() {
+    public Expression getDefinition() {
         return definition;
     }
 
@@ -38,7 +38,7 @@ public class Join extends Function {
     }
 
     @Override
-    public Function redux() {
+    public Expression redux() {
         return target.redux();
     }
 

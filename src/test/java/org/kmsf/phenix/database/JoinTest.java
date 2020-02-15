@@ -3,9 +3,9 @@ package org.kmsf.phenix.database;
 import org.junit.jupiter.api.Test;
 import org.kmsf.phenix.sql.PrintResult;
 import org.kmsf.phenix.sql.Scope;
-import org.kmsf.phenix.function.FunctionType;
+import org.kmsf.phenix.algebra.FunctionType;
 
-import static org.kmsf.phenix.function.Functions.*;
+import static org.kmsf.phenix.algebra.Functions.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 

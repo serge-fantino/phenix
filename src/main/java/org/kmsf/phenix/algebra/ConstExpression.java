@@ -1,13 +1,20 @@
-package org.kmsf.phenix.function;
+package org.kmsf.phenix.algebra;
 
 import org.kmsf.phenix.sql.PrintResult;
 import org.kmsf.phenix.sql.Scope;
 
-public class ConstFunction<T> extends Function {
+/**
+ * A {@link ConstExpression} is a constant expression with a parametrized type T.
+ * <p>
+ * The source domain for a constant expression is NULL constant.
+ *
+ * @param <T>
+ */
+public class ConstExpression<T> extends Expression {
 
     private T value;
 
-    public ConstFunction(T value) {
+    public ConstExpression(T value) {
         this.value = value;
     }
 
@@ -23,15 +30,15 @@ public class ConstFunction<T> extends Function {
     }
 
     @Override
-    public Function redux() {
+    public Expression redux() {
         return this;
     }
 
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-        if (obj instanceof ConstFunction) {
-            ConstFunction<Object> c = (ConstFunction) obj;
+        if (obj instanceof ConstExpression) {
+            ConstExpression<Object> c = (ConstExpression) obj;
             return c.value.equals(this.value);
         }
         return false;

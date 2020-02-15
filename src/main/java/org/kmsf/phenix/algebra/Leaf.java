@@ -1,4 +1,4 @@
-package org.kmsf.phenix.function;
+package org.kmsf.phenix.algebra;
 
 /**
  * A Leaf is a class that must implements identity method

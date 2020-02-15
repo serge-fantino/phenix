@@ -1,11 +1,17 @@
 package org.kmsf.phenix.database;
 
+import org.kmsf.phenix.algebra.PrecedenceOrder;
 import org.kmsf.phenix.sql.Scope;
-import org.kmsf.phenix.function.Function;
+import org.kmsf.phenix.algebra.Expression;
 
 import java.util.List;
 
-public abstract class View extends Function {
+/**
+ * A View is a special kind of {@link Expression} which defines a {@link Scope} of values and can be manipulated with {@link Statement}.
+ * <p>
+ * A View contains a list of {@Link Selector selectors}, that can be iterated with {@link #getSelectors()} or retrieved by name with {@link #selector(String)}.
+ */
+public abstract class View extends Expression {
 
     /**
      * return the view's scope
@@ -34,11 +40,11 @@ public abstract class View extends Function {
      *
      * @return
      */
-    public abstract List<Function> getPK();
+    public abstract List<Expression> getPK();
 
     @Override
     public int getPrecedence() {
-        return PRECEDENCE_ORDER_VIEW;
+        return PrecedenceOrder.PRECEDENCE_ORDER_VIEW;
     }
 
 }

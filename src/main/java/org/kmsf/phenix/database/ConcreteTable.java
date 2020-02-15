@@ -1,7 +1,7 @@
 package org.kmsf.phenix.database;
 
-import org.kmsf.phenix.function.Function;
-import org.kmsf.phenix.function.FunctionType;
+import org.kmsf.phenix.algebra.Expression;
+import org.kmsf.phenix.algebra.FunctionType;
 import org.kmsf.phenix.sql.PrintResult;
 import org.kmsf.phenix.sql.Scope;
 
@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * A Concrete Table is a Table with a well define selectors that cannot be modified
+ * A Concrete Table is a {@link Table} with a well define set of {@link Selector selectors} that cannot be modified.
  */
 public class ConcreteTable extends View {
 
@@ -52,7 +52,7 @@ public class ConcreteTable extends View {
     }
 
     @Override
-    public List<Function> getPK() {
+    public List<Expression> getPK() {
         return model.getPK();
     }
 
@@ -67,7 +67,7 @@ public class ConcreteTable extends View {
     }
 
     @Override
-    public Function redux() {
+    public Expression redux() {
         return model;
     }
 

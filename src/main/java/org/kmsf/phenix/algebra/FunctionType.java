@@ -1,23 +1,21 @@
-package org.kmsf.phenix.function;
-
-import org.kmsf.phenix.database.View;
+package org.kmsf.phenix.algebra;
 
 import java.util.*;
 
 public class FunctionType {
 
-    private ArrayList<Function> values = new ArrayList<>();
+    private ArrayList<Expression> values = new ArrayList<>();
 
     public FunctionType() {
         //
     }
 
-    public FunctionType(Function function) {
-        values.add(function);
+    public FunctionType(Expression expression) {
+        values.add(expression);
     }
 
-    public FunctionType(Function... functions) {
-        for (Function f : functions)
+    public FunctionType(Expression... expressions) {
+        for (Expression f : expressions)
             values.add(f);
     }
 
@@ -26,15 +24,15 @@ public class FunctionType {
             addAll(f.values);
     }
 
-    public FunctionType(List<? extends Function> functions) {
+    public FunctionType(List<? extends Expression> functions) {
         functions.forEach(fun -> add(fun));
     }
 
-    public boolean contains(Function fun) {
+    public boolean contains(Expression fun) {
         return values.contains(fun);
     }
 
-    public FunctionType add(Function fun) {
+    public FunctionType add(Expression fun) {
         if (!values.contains(fun)) values.add(fun);
         return this;
     }
@@ -44,20 +42,20 @@ public class FunctionType {
         return this;
     }
 
-    public void addAll(List<Function> values) {
+    public void addAll(List<Expression> values) {
         values.forEach(function -> this.add(function));
     }
 
-    public List<Function> getValues() {
+    public List<Expression> getValues() {
         return Collections.unmodifiableList(values);
     }
 
-    public Optional<Function> getHead() {
+    public Optional<Expression> getHead() {
         if (values.isEmpty()) return Optional.empty();
         return Optional.ofNullable(values.get(0));
     }
 
-    public Optional<Function> getTail() {
+    public Optional<Expression> getTail() {
         if (values.isEmpty()) return Optional.empty();
         return Optional.ofNullable(values.get(values.size() - 1));
     }

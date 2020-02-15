@@ -1,12 +1,12 @@
 package org.kmsf.phenix.sql;
 
+import org.kmsf.phenix.algebra.Operators;
 import org.kmsf.phenix.database.ScopeException;
 import org.kmsf.phenix.database.Select;
 import org.kmsf.phenix.database.Selector;
 import org.kmsf.phenix.database.View;
-import org.kmsf.phenix.function.Function;
-import org.kmsf.phenix.function.FunctionType;
-import org.kmsf.phenix.function.Functions;
+import org.kmsf.phenix.algebra.Expression;
+import org.kmsf.phenix.algebra.FunctionType;
 
 import java.util.Optional;
 
@@ -14,22 +14,22 @@ public class SelectClause implements Printer {
 
     private View view;
     private Scope scope;
-    private Function definition;
+    private Expression definition;
     private Optional<String> alias = Optional.empty();
 
-    public SelectClause(View view, Scope scope, Function expr) {
+    public SelectClause(View view, Scope scope, Expression expr) {
         this.view = view;
         this.scope = scope;
         this.definition = expr;
     }
 
 
-    public SelectClause(View view, Scope scope, Function expr, String alias) {
+    public SelectClause(View view, Scope scope, Expression expr, String alias) {
         this(view, scope, expr);
         this.alias = Optional.ofNullable(alias);
     }
 
-    public Function getDefinition() {
+    public Expression getDefinition() {
         return definition;
     }
 
@@ -43,7 +43,7 @@ public class SelectClause implements Printer {
             if (definition instanceof Selector) {
                 Selector selector = (Selector) definition;
                 Optional<String> systemName = selector.getSystemName();
-                if (!systemName.equals(alias) && alias.isPresent() && !(systemName.isPresent() && systemName.get().equals(Functions._STAR))) {
+                if (!systemName.equals(alias) && alias.isPresent() && !(systemName.isPresent() && systemName.get().equals(Operators._STAR))) {
                     appendAlias(result, alias.get());
                 }
             } else
@@ -81,7 +81,7 @@ public class SelectClause implements Printer {
             }
 
             @Override
-            public Function redux() {
+            public Expression redux() {
                 return definition.redux();
             }
 

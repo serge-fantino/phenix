@@ -1,20 +1,18 @@
-package org.kmsf.phenix.function;
+package org.kmsf.phenix.algebra;
 
 import org.junit.jupiter.api.Test;
-import org.kmsf.phenix.database.Column;
 import org.kmsf.phenix.database.ScopeException;
 import org.kmsf.phenix.database.Table;
-import org.kmsf.phenix.sql.Mapping;
 import org.kmsf.phenix.sql.PrintResult;
 import org.kmsf.phenix.sql.Scope;
 
 import java.util.Collections;
 
-import static org.kmsf.phenix.function.Functions.*;
+import static org.kmsf.phenix.algebra.Functions.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class FunctionTest {
+class ExpressionTest {
 
     @Test
     void testFunctions() throws ScopeException {
@@ -37,7 +35,7 @@ class FunctionTest {
 
     @Test
     void testPrecedenceOrder() throws ScopeException {
-        assertTrue(Function.PRECEDENCE_ORDER_VIEW>Function.PRECEDENCE_ORDER_STATEMENT);
+        assertTrue(PrecedenceOrder.PRECEDENCE_ORDER_VIEW > PrecedenceOrder.PRECEDENCE_ORDER_STATEMENT);
         assertEquals(
                 "(10+10)*(10+10)",
                 MULTIPLY(ADD(CONST(10), CONST(10)), ADD(CONST(10), CONST(10))).print(new Scope(), new PrintResult()).print());

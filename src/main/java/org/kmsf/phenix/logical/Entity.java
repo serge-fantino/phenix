@@ -3,11 +3,10 @@ package org.kmsf.phenix.logical;
 import org.kmsf.phenix.database.*;
 import org.kmsf.phenix.sql.PrintResult;
 import org.kmsf.phenix.sql.Scope;
-import org.kmsf.phenix.function.FunctionType;
-import org.kmsf.phenix.function.Function;
+import org.kmsf.phenix.algebra.FunctionType;
+import org.kmsf.phenix.algebra.Expression;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,11 +44,11 @@ public class Entity extends View {
     }
 
     @Override
-    public List<Function> getPK() {
+    public List<Expression> getPK() {
         return view.getPK();
     }
 
-    public Attribute attribute(String name, Function expr) throws ScopeException {
+    public Attribute attribute(String name, Expression expr) throws ScopeException {
         FunctionType source = expr.getSource();
         if (!source.contains(view)) throw new ScopeException("invalid attribute");
         return register(new Attribute(this, name, expr));
@@ -60,7 +59,7 @@ public class Entity extends View {
         return register(new Attribute(this, name, expr));
     }
 
-    public Attribute join(View target, String name, Function expr) throws ScopeException {
+    public Attribute join(View target, String name, Expression expr) throws ScopeException {
         return register(new Attribute(this, name, new Join(target, expr)));
     }
 
@@ -92,7 +91,7 @@ public class Entity extends View {
     }
 
     @Override
-    public Function redux() {
+    public Expression redux() {
         return view.redux();
     }
 

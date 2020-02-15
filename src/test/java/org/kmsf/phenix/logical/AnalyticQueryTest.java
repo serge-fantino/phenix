@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.kmsf.phenix.database.Join;
 import org.kmsf.phenix.database.ScopeException;
 import org.kmsf.phenix.database.Table;
-import org.kmsf.phenix.function.Functions;
+import org.kmsf.phenix.algebra.Functions;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;

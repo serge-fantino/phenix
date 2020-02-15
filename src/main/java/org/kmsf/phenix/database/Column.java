@@ -1,10 +1,10 @@
 package org.kmsf.phenix.database;
 
-import org.kmsf.phenix.function.Function;
-import org.kmsf.phenix.function.Leaf;
+import org.kmsf.phenix.algebra.Expression;
+import org.kmsf.phenix.algebra.Leaf;
 import org.kmsf.phenix.sql.PrintResult;
 import org.kmsf.phenix.sql.Scope;
-import org.kmsf.phenix.function.FunctionType;
+import org.kmsf.phenix.algebra.FunctionType;
 
 import java.util.Optional;
 
@@ -55,12 +55,12 @@ public class Column extends Selector implements Leaf {
      * @return
      */
     @Override
-    public Function redux() {
+    public Expression redux() {
         return this;
     }
 
     @Override
-    public boolean identity(Function fun) {
+    public boolean identity(Expression fun) {
         if (fun instanceof Column) {
             Column col = (Column) fun;
             return this.table.equals(col.table) && this.name.equals(col.name);

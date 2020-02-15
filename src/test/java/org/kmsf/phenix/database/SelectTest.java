@@ -1,15 +1,14 @@
 package org.kmsf.phenix.database;
 
 import org.junit.jupiter.api.Test;
-import org.kmsf.phenix.function.Function;
-import org.kmsf.phenix.function.FunctionType;
-import org.kmsf.phenix.sql.Scope;
+import org.kmsf.phenix.algebra.Expression;
+import org.kmsf.phenix.algebra.FunctionType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.kmsf.phenix.function.Functions.*;
+import static org.kmsf.phenix.algebra.Functions.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -78,7 +77,7 @@ class SelectTest {
                 .select(table.column("name"))
                 .innerJoin(transaction, EQUALS(table.getPK(), transaction.getPK()))
                 .groupBy(table.getPK()).groupBy(transaction.getPK());
-        List<Function> keys = new ArrayList<>(table.getPK());
+        List<Expression> keys = new ArrayList<>(table.getPK());
         keys.addAll(transaction.getPK());
         assertEquals(keys, select.getPK());
     }
@@ -160,8 +159,8 @@ class SelectTest {
         Table people = new Table("people").PK("peopleID");
         Column city = people.column("city");
         Column revenue = people.column("revenue");
-        Function square = MULTIPLY(revenue, revenue);
-        Function twice = MULTIPLY(revenue, CONST(2));
+        Expression square = MULTIPLY(revenue, revenue);
+        Expression twice = MULTIPLY(revenue, CONST(2));
         Select something = new Select(people).select(square, "squareRevenue");
         assertDoesNotThrow(() -> something.selector("squareRevenue"));
         assertThrows(ScopeException.class, () -> something.selector("nothingToShow"));
